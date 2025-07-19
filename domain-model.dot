@@ -1,0 +1,24 @@
+digraph DomainModel {
+  rankdir=LR;
+  node [shape=box, style=filled, fillcolor=lightblue];
+  edge [fontsize=10];
+  
+  Game [label="Game\n---\nstate\ncurrentPlayer\nwinner"];
+  Player [label="Player\n---\nname"];
+  Worker [label="Worker\n---\nid"];
+  Board [label="Board\n---\nsize: 5x5"];
+  Tower [label="Tower\n---\nheight\nhasDome"];
+  Position [label="Position\n---\nx\ny"];
+  
+  Game -> Player [label="players\n1..*", dir=both, arrowhead=odiamond, arrowtail=none];
+  Game -> Player [label="currentPlayer\n0..1", dir=both, arrowhead=vee, arrowtail=none];
+  Game -> Player [label="winner\n0..1", dir=both, arrowhead=vee, arrowtail=none];
+  Game -> Board [label="board\n1", dir=both, arrowhead=odiamond, arrowtail=none];
+  
+  Player -> Worker [label="workers\n2", dir=both, arrowhead=odiamond, arrowtail=none];
+  
+  Worker -> Position [label="position\n0..1", dir=both, arrowhead=vee, arrowtail=none];
+  
+  Board -> Tower [label="towers\n0..*", dir=both, arrowhead=odiamond, arrowtail=none];
+  Tower -> Position [label="position\n1", dir=both, arrowhead=vee, arrowtail=none];
+}

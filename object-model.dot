@@ -1,0 +1,30 @@
+digraph ObjectModel {
+  rankdir=TB;
+  node [shape=record, style=filled, fillcolor=lightblue];
+  edge [fontsize=10];
+  
+  Game [label="{Game|+ board: Board\n+ players: List<Player>\n+ currentPlayer: Player\n+ winner: Player\n+ selectedWorker: Worker\n+ state: GameState|+ addPlayer(player: Player): boolean\n+ placeWorker(workerIndex: int, position: Position): boolean\n+ selectWorker(workerIndex: int): boolean\n+ moveWorker(position: Position): boolean\n+ build(position: Position, isDome: boolean): boolean\n+ isGameOver(): boolean\n+ getWinner(): Player\n+ getCurrentPlayer(): Player\n+ getState(): GameState}"];
+  
+  GameState [label="{GameState|SETUP\nMOVE\nBUILD\nGAME_OVER}"];
+  
+  Player [label="{Player|+ name: String\n+ workers: List<Worker>|+ getName(): String\n+ getWorkers(): List<Worker>\n+ getWorker(index: int): Worker\n+ placeWorker(board: Board, workerIndex: int, position: Position): boolean}"];
+  
+  Worker [label="{Worker|+ position: Position\n+ id: String\n+ owner: Player|+ getPosition(): Position\n+ setPosition(position: Position): void\n+ getId(): String\n+ getOwner(): Player\n+ move(board: Board, position: Position): boolean\n+ build(board: Board, position: Position, isDome: boolean): boolean}"];
+  
+  Board [label="{Board|+ heights: int[][]\n+ hasDome: boolean[][]\n+ isOccupied: boolean[][]|+ getHeight(position: Position): int\n+ hasDome(position: Position): boolean\n+ isOccupied(position: Position): boolean\n+ setOccupied(position: Position, occupied: boolean): void\n+ buildBlock(position: Position): boolean\n+ buildDome(position: Position): boolean\n+ canMove(source: Position, target: Position): boolean\n+ canBuild(workerPosition: Position, buildPosition: Position): boolean}"];
+  
+  Position [label="{Position|+ x: int\n+ y: int|+ getX(): int\n+ getY(): int\n+ isAdjacentTo(other: Position): boolean\n+ isWithinBounds(): boolean}"];
+  
+  Game -> GameState [arrowhead=vee, style=dashed];
+  Game -> Board [label="1", arrowhead=vee];
+  Game -> Player [label="2", arrowhead=vee];
+  Game -> Player [label="currentPlayer\n0..1", arrowhead=vee];
+  Game -> Player [label="winner\n0..1", arrowhead=vee];
+  Game -> Worker [label="selectedWorker\n0..1", arrowhead=vee];
+  
+  Player -> Worker [label="2", arrowhead=odiamond];
+  Worker -> Player [label="owner\n1", arrowhead=vee];
+  Worker -> Position [label="0..1", arrowhead=vee];
+  
+  Board -> Position [label="uses", style=dashed, arrowhead=vee];
+}

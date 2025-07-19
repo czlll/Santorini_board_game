@@ -1,0 +1,42 @@
+digraph SystemSequenceDiagram {
+  rankdir=TB;
+  node [shape=box, style=filled, fillcolor=lightblue];
+  edge [fontsize=10, arrowhead=vee];
+  
+  subgraph cluster_0 {
+    label="System Sequence Diagram for Santorini Game";
+    color=lightgrey;
+    
+    User [label="User"];
+    System [label="Santorini Game System"];
+    
+    edge [fontsize=10, arrowhead=vee];
+    
+    User -> System [label="1. startGame()"];
+    System -> User [label="2. gameStarted()"];
+    
+    User -> System [label="3. addPlayer(name)"];
+    System -> User [label="4. playerAdded(player)"];
+    
+    User -> System [label="5. placeWorker(player, workerIndex, position)"];
+    System -> User [label="6. workerPlaced(success)"];
+    
+    User -> System [label="7. selectWorker(player, workerIndex)"];
+    System -> User [label="8. workerSelected(worker)"];
+    
+    User -> System [label="9. moveWorker(position)"];
+    System -> User [label="10. workerMoved(success)"];
+    
+    User -> System [label="11. build(position, isDome)"];
+    System -> User [label="12. built(success)"];
+    
+    User -> System [label="13. getCurrentPlayer()"];
+    System -> User [label="14. returnCurrentPlayer(player)"];
+    
+    User -> System [label="15. getGameState()"];
+    System -> User [label="16. returnGameState(state)"];
+    
+    User -> System [label="17. getWinner()"];
+    System -> User [label="18. returnWinner(player)"];
+  }
+}
