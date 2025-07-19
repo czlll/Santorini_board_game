@@ -7,7 +7,7 @@ const WinGame = () => {
   const startGame = () => {
     var config = {
       method: "get",
-      url: "http://localhost:8080",
+      url: "https://work-1-ohkufjawidydjnky.prod-runtime.all-hands.dev",
       headers: {},
     };
 

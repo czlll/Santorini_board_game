@@ -111,7 +111,7 @@ const GameBoard = () => {
   const loadGame = () => {
     var config = {
       method: "get",
-      url: "http://localhost:8080/getGameInfo",
+      url: "https://work-1-ohkufjawidydjnky.prod-runtime.all-hands.dev/getGameInfo",
       headers: {},
     };
     axios(config)
@@ -211,7 +211,7 @@ const GameBoard = () => {
         var config = {
           method: "get",
           url:
-            "http://localhost:8080/moveWorker?curPlayerAction=" +
+            "https://work-1-ohkufjawidydjnky.prod-runtime.all-hands.dev/moveWorker?curPlayerAction=" +
             curPlayerAction +
             "&row=" +
             prevGridX +
@@ -269,7 +269,7 @@ const GameBoard = () => {
         var config = {
           method: "get",
           url:
-            "http://localhost:8080/commandBuild?curPlayerAction=" +
+            "https://work-1-ohkufjawidydjnky.prod-runtime.all-hands.dev/commandBuild?curPlayerAction=" +
             curPlayerAction +
             "&row=" +
             prevGridX +
@@ -316,7 +316,7 @@ const GameBoard = () => {
     } else {
       var config = {
         method: "get",
-        url: "http://localhost:8080/skipAction",
+        url: "https://work-1-ohkufjawidydjnky.prod-runtime.all-hands.dev/skipAction",
         headers: {},
       };
 
@@ -338,7 +338,7 @@ const GameBoard = () => {
   const triggerUndo = () => {
     var config = {
       method: "get",
-      url: "http://localhost:8080/triggerUndo",
+      url: "https://work-1-ohkufjawidydjnky.prod-runtime.all-hands.dev/triggerUndo",
       headers: {},
     };
     axios(config)
