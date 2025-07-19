@@ -30,9 +30,9 @@ public class App extends RouterNanoHTTPD {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
     }
 
-//    start service with port 8080
+//    start service with port 12000
     public static void main(String[] args) throws IOException {
-        new App(8080);
+        new App(12000);
     }
 
     @Override

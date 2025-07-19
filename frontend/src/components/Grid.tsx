@@ -56,7 +56,7 @@ const Grid: FC<Props> = ({ Ref, row, col, onClick }) => {
     ) {
       var config = {
         method: "get",
-        url: "http://localhost:8080/placeWorker?row=" + row + "&col=" + col,
+        url: "https://work-1-ohkufjawidydjnky.prod-runtime.all-hands.dev/placeWorker?row=" + row + "&col=" + col,
         headers: {},
       };
 
