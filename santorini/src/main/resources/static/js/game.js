@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerElement.textContent = gameState.currentPlayer || '';
         
         // Show/hide worker selection buttons based on game state
-        if (gameState.state === 'SELECT_WORKER') {
+        if (gameState.state === 'MOVE') {
             workerSelection.classList.remove('hidden');
         } else {
             workerSelection.classList.add('hidden');

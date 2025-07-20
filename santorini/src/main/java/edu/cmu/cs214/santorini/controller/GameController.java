@@ -61,7 +61,13 @@ public class GameController {
 
     @PostMapping("/select")
     public Map<String, Object> selectWorker(@RequestParam int workerId) {
+        System.out.println("Selecting worker " + workerId + " for player " + game.getCurrentPlayer().getName());
+        System.out.println("Current game state: " + game.getState());
+        System.out.println("Player has " + game.getCurrentPlayer().getWorkers().size() + " workers");
+        
         boolean success = game.selectWorker(workerId);
+        System.out.println("Worker selection success: " + success);
+        
         Map<String, Object> response = getGameState();
         response.put("success", success);
         return response;
@@ -69,7 +75,14 @@ public class GameController {
 
     @PostMapping("/move")
     public Map<String, Object> moveWorker(@RequestParam int x, @RequestParam int y) {
-        boolean success = game.moveWorker(new Position(x, y));
+        Position target = new Position(x, y);
+        System.out.println("Attempting to move worker to position (" + x + ", " + y + ")");
+        System.out.println("Current game state: " + game.getState());
+        System.out.println("Selected worker position: " + (game.getSelectedWorker() != null ? game.getSelectedWorker().getPosition() : "null"));
+        
+        boolean success = game.moveWorker(target);
+        System.out.println("Move success: " + success);
+        
         Map<String, Object> response = getGameState();
         response.put("success", success);
         return response;

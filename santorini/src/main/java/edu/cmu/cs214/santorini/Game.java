@@ -67,6 +67,15 @@ public class Game {
   }
 
   /**
+   * Gets the currently selected worker.
+   *
+   * @return the selected worker, or null if none is selected
+   */
+  public Worker getSelectedWorker() {
+    return selectedWorker;
+  }
+
+  /**
    * Gets the current player.
    *
    * @return the current player
@@ -102,14 +111,7 @@ public class Game {
     return new ArrayList<>(players);
   }
 
-  /**
-   * Gets the currently selected worker, or null if no worker is selected.
-   *
-   * @return the selected worker, or null if no worker is selected
-   */
-  public Worker getSelectedWorker() {
-    return selectedWorker;
-  }
+
 
   /**
    * Places a worker for the current player during the setup phase.
