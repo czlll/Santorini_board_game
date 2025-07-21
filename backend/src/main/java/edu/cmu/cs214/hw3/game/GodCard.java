@@ -5,6 +5,6 @@ public enum GodCard {
     Minotaur,
     Pan,
     Hermes,
-    Apollo
-
+    Apollo,
+    Hephaestus
 }
