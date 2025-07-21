@@ -6,7 +6,28 @@ Based on the project requirements document, I have created a comprehensive test 
 
 ## Test Classes Created
 
-### 1. ComprehensiveGameTest.java
+### 1. DocumentBasedTest.java ⭐ NEW
+**Purpose**: 基于测试文档的具体测试用例实现
+**Key Test Areas**:
+- ✅ 测试用例 1-6: 工人放置功能测试
+- ✅ 测试用例 7-9: 工人移动功能测试
+- ✅ 测试用例 10-12: 建筑建造功能测试
+- ✅ 测试用例 13-14: 胜负判定测试
+- ✅ 测试用例 15-16: 非法操作反馈测试
+- ✅ 测试用例 17-18: 用户界面操作测试
+
+### 2. WorkerMovementAndBuildingTest.java ⭐ NEW
+**Purpose**: 工人移动和建造功能专项测试
+**Key Test Areas**:
+- ✅ 相邻移动的所有8个方向测试
+- ✅ 高度限制测试（爬升一层、不能爬升两层）
+- ✅ 下降任意高度测试
+- ✅ 建造相邻格子限制测试
+- ✅ 建造层数递增测试
+- ✅ 圆顶建造规则测试
+- ✅ 棋盘边界移动和建造测试
+
+### 3. ComprehensiveGameTest.java
 **Purpose**: Tests core game functionality and functional requirements
 **Key Test Areas**:
 - ✅ Worker placement phase validation
@@ -16,7 +37,7 @@ Based on the project requirements document, I have created a comprehensive test 
 - ⚠️ Win conditions (needs adjustment for game-specific logic)
 - ✅ Error handling and validation
 
-### 2. GameRulesTest.java
+### 4. GameRulesTest.java
 **Purpose**: Tests specific game rules and mechanics
 **Key Test Areas**:
 - ✅ Win condition testing (level 3 tower)
@@ -25,7 +46,7 @@ Based on the project requirements document, I have created a comprehensive test 
 - ✅ Game operation sequences
 - ✅ Invalid operation handling
 
-### 3. UserInterfaceTest.java
+### 5. UserInterfaceTest.java
 **Purpose**: Tests user interface requirements and interactions
 **Key Test Areas**:
 - ✅ Board display functionality
@@ -35,7 +56,7 @@ Based on the project requirements document, I have created a comprehensive test 
 - ✅ Error message clarity
 - ✅ Game state visibility
 
-### 4. PerformanceTest.java
+### 6. PerformanceTest.java
 **Purpose**: Tests performance and non-functional requirements
 **Key Test Areas**:
 - ✅ Game initialization performance (< 5 seconds)
@@ -45,7 +66,7 @@ Based on the project requirements document, I have created a comprehensive test 
 - ✅ Error recovery mechanisms
 - ✅ Stress testing scenarios
 
-### 5. EdgeCaseTest.java
+### 7. EdgeCaseTest.java
 **Purpose**: Tests boundary conditions and edge cases
 **Key Test Areas**:
 - ✅ Board boundary handling
@@ -55,7 +76,7 @@ Based on the project requirements document, I have created a comprehensive test 
 - ✅ Input validation
 - ✅ Rapid operation handling
 
-### 6. AllTestsSuite.java
+### 8. AllTestsSuite.java
 **Purpose**: Comprehensive test suite runner
 **Includes**: All new test classes plus existing tests (GameTest, IntegrationTest, God Card tests)
 
@@ -87,8 +108,10 @@ Based on the project requirements document, I have created a comprehensive test 
 
 ## Test Statistics
 
-- **Total Test Classes**: 5 new + 9 existing = 14 classes
-- **Total Test Methods**: ~80+ test methods
+- **Total Test Classes**: 7 new + 9 existing = 16 classes
+- **Total Test Methods**: ~120+ test methods
+- **Document-based Test Cases**: 18 specific test cases (测试用例 1-18)
+- **Additional Specialized Tests**: 15+ movement and building tests
 - **Coverage Areas**: 
   - Core game mechanics
   - User interface requirements

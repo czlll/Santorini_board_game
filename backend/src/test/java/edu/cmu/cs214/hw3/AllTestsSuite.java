@@ -7,6 +7,8 @@ import org.junit.runners.Suite;
  * Test suite that runs all comprehensive tests for the Santorini game
  * 
  * This suite includes:
+ * - DocumentBasedTest: 基于测试文档的具体测试用例 (测试用例 1-18)
+ * - WorkerMovementAndBuildingTest: 工人移动和建造功能专项测试
  * - ComprehensiveGameTest: Core game functionality and requirements
  * - GameRulesTest: Specific game rules and mechanics
  * - UserInterfaceTest: UI requirements and user interactions
@@ -17,6 +19,10 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    // Document-based test classes (基于测试文档的测试用例)
+    DocumentBasedTest.class,
+    WorkerMovementAndBuildingTest.class,
+    
     // New comprehensive test classes
     ComprehensiveGameTest.class,
     GameRulesTest.class,
@@ -36,7 +42,8 @@ import org.junit.runners.Suite;
     edu.cmu.cs214.hw3.GodCardTest.MinotaurTest.class,
     edu.cmu.cs214.hw3.GodCardTest.PanTest.class,
     edu.cmu.cs214.hw3.GodCardTest.HermesTest.class,
-    edu.cmu.cs214.hw3.GodCardTest.ApolloTest.class
+    edu.cmu.cs214.hw3.GodCardTest.ApolloTest.class,
+    edu.cmu.cs214.hw3.GodCardTest.HephaestusTest.class
 })
 public class AllTestsSuite {
     // This class remains empty, it is used only as a holder for the above annotations

@@ -10,11 +10,13 @@ import static org.junit.Assert.*;
  * Comprehensive test suite for Santorini game based on requirements document
  * Tests all functional requirements including:
  * - Game initialization and setup
- * - Worker placement phase
+ * - Worker placement phase (测试用例 1-6)
  * - Game turn mechanics (move and build)
- * - Win conditions
- * - Invalid operations and error handling
+ * - Win conditions (测试用例 13-14)
+ * - Invalid operations and error handling (测试用例 15-16)
  * - Game state management
+ * 
+ * 补充文档中指定的测试用例，与 DocumentBasedTest 配合提供完整覆盖
  */
 public class ComprehensiveGameTest {
     
@@ -31,8 +33,11 @@ public class ComprehensiveGameTest {
         game = new Game(board, playerA, playerB);
     }
 
-    // ========== 3.1.3 Worker Placement Phase Tests ==========
+    // ========== 2.1 Worker Placement Phase Tests ==========
     
+    /**
+     * Test Case 1: Verifies that a worker can be legally placed on an empty cell
+     */
     @Test
     public void testWorkerPlacementPhase() throws Exception {
         // Initially game should be in setup phase
@@ -71,6 +76,9 @@ public class ComprehensiveGameTest {
         assertEquals("PlayerB", game.getBoard().getCell(4, 3).getWorker().getPlayerName());
     }
     
+    /**
+     * Test Case 3: Verifies that a worker cannot be placed on an already occupied cell
+     */
     @Test
     public void testWorkerPlacementInvalidPositions() throws Exception {
         // Place first worker
@@ -85,6 +93,9 @@ public class ComprehensiveGameTest {
         }
     }
     
+    /**
+     * Test Case 4: Verifies that a worker cannot be placed outside the board boundaries
+     */
     @Test
     public void testWorkerPlacementOutOfBounds() throws Exception {
         try {
@@ -104,8 +115,31 @@ public class ComprehensiveGameTest {
         }
     }
 
-    // ========== 3.1.4 Game Turn Tests ==========
+    /**
+     * Test Case 6: Verifies that after all workers are placed, the game transitions to play phase
+     */
+    @Test
+    public void testGameTransitionToPlayPhase() throws Exception {
+        // Initially game should be in setup phase
+        assertEquals(-1, game.getGameStatus());
+        
+        // Place all workers
+        game.placeWorkerAuto(0, 0); // Player A worker 1
+        game.placeWorkerAuto(0, 1); // Player A worker 2
+        game.placeWorkerAuto(4, 4); // Player B worker 1
+        game.placeWorkerAuto(4, 3); // Player B worker 2
+        
+        // Verify game has transitioned to play phase
+        assertEquals(1, game.getGameStatus()); // Now in play phase
+        assertEquals(0, game.getCurPlayer()); // Player A starts
+        assertEquals(2, game.getCurPlayerAction(), 0); // Select worker to move
+    }
     
+    // ========== 2.2 Worker Movement Tests ==========
+    
+    /**
+     * Test Case 7: Verifies that a worker can move legally to an adjacent cell
+     */
     @Test
     public void testBasicGameTurn() throws Exception {
         setupCompleteGame();
@@ -128,6 +162,10 @@ public class ComprehensiveGameTest {
         assertEquals(1, game.getBoard().getCell(1, 1).getTowerLevel());
     }
     
+    /**
+     * Test Case 8: Verifies that a worker cannot move more than one cell away
+     * and cannot climb more than one level
+     */
     @Test
     public void testMoveRestrictions() throws Exception {
         setupCompleteGame();
@@ -158,6 +196,29 @@ public class ComprehensiveGameTest {
         }
     }
     
+    /**
+     * Test Case 9: Verifies that a worker cannot move to a cell with a dome
+     */
+    @Test
+    public void testCannotMoveToDomedCell() throws Exception {
+        setupCompleteGame();
+        
+        // Create a cell with a dome
+        game.getBoard().getCell(1, 0).setTower(new Tower(4)); // Level 4 with dome
+        assertTrue(game.getBoard().getCell(1, 0).getTower().hasDome());
+        
+        // Try to move to the domed cell
+        try {
+            game.moveWorkerAuto(0, 0, 1, 0);
+            fail("Should not allow moving to a cell with a dome");
+        } catch (Exception e) {
+            assertEquals("cannot move to a tower with dome", e.getMessage());
+        }
+    }
+    
+    /**
+     * Test Case 10: Verifies that a worker can build on an adjacent empty cell
+     */
     @Test
     public void testBuildRestrictions() throws Exception {
         setupCompleteGame();
@@ -182,8 +243,59 @@ public class ComprehensiveGameTest {
         }
     }
 
-    // ========== 3.1.6 Win Condition Tests ==========
+    /**
+     * Test Case 11: Verifies that a worker cannot build on a cell with a dome
+     */
+    @Test
+    public void testCannotBuildOnDome() throws Exception {
+        setupCompleteGame();
+        
+        // Create a cell with a dome
+        game.getBoard().getCell(1, 1).setTower(new Tower(4)); // Level 4 with dome
+        assertTrue(game.getBoard().getCell(1, 1).getTower().hasDome());
+        
+        // Move worker to adjacent cell
+        game.moveWorkerAuto(0, 0, 0, 1);
+        
+        // Try to build on the domed cell
+        try {
+            game.buildAuto(0, 1, 1, 1, false);
+            fail("Should not allow building on a cell with a dome");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("Cannot build") || 
+                      e.getMessage().contains("dome"));
+        }
+    }
     
+    /**
+     * Test Case 12: Verifies that a worker cannot build beyond level 4
+     */
+    @Test
+    public void testCannotBuildBeyondLevel4() throws Exception {
+        setupCompleteGame();
+        
+        // Create a tower at level 4 with dome
+        game.getBoard().getCell(1, 1).setTower(new Tower(4));
+        assertTrue(game.getBoard().getCell(1, 1).getTower().hasDome());
+        
+        // Move worker to adjacent cell
+        game.moveWorkerAuto(0, 0, 0, 1);
+        
+        // Try to build on the level 4 tower
+        try {
+            game.buildAuto(0, 1, 1, 1, true);
+            fail("Should not allow building beyond level 4");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("Cannot build") || 
+                      e.getMessage().contains("dome"));
+        }
+    }
+    
+    // ========== 2.4 Victory Condition Tests ==========
+    
+    /**
+     * Test Case 13: Verifies that a player wins by moving a worker to level 3
+     */
     @Test
     public void testWinByReachingLevel3() throws Exception {
         setupCompleteGame();
@@ -198,6 +310,9 @@ public class ComprehensiveGameTest {
         assertEquals(0, game.getCurPlayer()); // Player A won
     }
     
+    /**
+     * Test Case 14: Verifies that no moves are allowed after the game ends
+     */
     @Test
     public void testCannotMoveAfterGameEnds() throws Exception {
         setupCompleteGame();
@@ -217,8 +332,80 @@ public class ComprehensiveGameTest {
         }
     }
 
-    // ========== Building System Tests ==========
+    // ========== 2.5 Error Handling Tests ==========
     
+    /**
+     * Test Case 15: Verifies that appropriate error messages are shown for illegal moves
+     */
+    @Test
+    public void testIllegalMoveErrorMessages() throws Exception {
+        setupCompleteGame();
+        
+        // Test moving to non-adjacent cell
+        try {
+            game.moveWorkerAuto(0, 0, 2, 2);
+            fail("Should not allow moving to non-adjacent cell");
+        } catch (Exception e) {
+            assertEquals("cannot move more than 1 cell", e.getMessage());
+        }
+        
+        // Test moving to occupied cell
+        try {
+            game.moveWorkerAuto(0, 0, 0, 1);
+            fail("Should not allow moving to occupied cell");
+        } catch (Exception e) {
+            assertEquals("worker already exists in the about-to-move cell", e.getMessage());
+        }
+        
+        // Test moving out of bounds
+        try {
+            game.moveWorkerAuto(0, 0, -1, 0);
+            fail("Should not allow moving out of bounds");
+        } catch (Exception e) {
+            assertEquals("make this move will take the worker out of the board", e.getMessage());
+        }
+    }
+    
+    /**
+     * Test Case 16: Verifies that appropriate error messages are shown for illegal builds
+     */
+    @Test
+    public void testIllegalBuildErrorMessages() throws Exception {
+        setupCompleteGame();
+        
+        // Move worker first
+        game.moveWorkerAuto(0, 0, 1, 0);
+        
+        // Test building on non-adjacent cell
+        try {
+            game.buildAuto(1, 0, 3, 3, false);
+            fail("Should not allow building on non-adjacent cell");
+        } catch (Exception e) {
+            assertEquals("can only build in adjacent cell", e.getMessage());
+        }
+        
+        // Test building on occupied cell
+        try {
+            game.buildAuto(1, 0, 0, 1, false);
+            fail("Should not allow building on occupied cell");
+        } catch (Exception e) {
+            assertEquals("Cannot build because the distinated location alreay has a worker", e.getMessage());
+        }
+        
+        // Test building out of bounds
+        try {
+            game.buildAuto(1, 0, -1, 0, false);
+            fail("Should not allow building out of bounds");
+        } catch (Exception e) {
+            assertEquals("can not build when location is out of the board", e.getMessage());
+        }
+    }
+    
+    // ========== 2.3 Building System Tests ==========
+    
+    /**
+     * Test Case 10: Verifies that building progresses correctly through levels 0-4
+     */
     @Test
     public void testBuildingProgression() throws Exception {
         setupCompleteGame();
@@ -248,6 +435,9 @@ public class ComprehensiveGameTest {
         assertTrue(game.getBoard().getCell(2, 0).getTower().hasDome());
     }
     
+    /**
+     * Test Case 9: Verifies that a worker cannot move onto a cell with a dome
+     */
     @Test
     public void testCannotMoveOnDome() throws Exception {
         setupCompleteGame();
@@ -263,8 +453,51 @@ public class ComprehensiveGameTest {
         }
     }
 
+    // ========== 2.6 User Interface Tests ==========
+    
+    /**
+     * Test Case 17: Verifies that worker selection works correctly
+     */
+    @Test
+    public void testWorkerSelection() throws Exception {
+        setupCompleteGame();
+        
+        // Initially no worker is selected (focusing grid is -1,-1)
+        assertEquals(-1, game.getFocusingGridC());
+        
+        // Select worker by moving it
+        game.moveWorkerAuto(0, 0, 1, 0);
+        
+        // After moving, the worker's position should be the new focusing grid
+        assertEquals(0, game.getFocusingGridC());
+    }
+    
+    /**
+     * Test Case 18: Verifies that building on empty cells works correctly
+     */
+    @Test
+    public void testBuildingOnEmptyCell() throws Exception {
+        setupCompleteGame();
+        
+        // Move worker first
+        game.moveWorkerAuto(0, 0, 1, 0);
+        
+        // Build on empty adjacent cell
+        game.buildAuto(1, 0, 2, 0, false);
+        
+        // Verify building was placed
+        assertEquals(1, game.getBoard().getCell(2, 0).getTowerLevel());
+        assertFalse(game.getBoard().getCell(2, 0).getTower().hasDome());
+        
+        // Verify turn passed to next player
+        assertEquals(1, game.getCurPlayer());
+    }
+    
     // ========== Player Turn Management Tests ==========
     
+    /**
+     * Verifies that player turns alternate correctly after each complete turn
+     */
     @Test
     public void testPlayerTurnAlternation() throws Exception {
         setupCompleteGame();
@@ -285,6 +518,9 @@ public class ComprehensiveGameTest {
         assertEquals(0, game.getCurPlayer()); // Back to Player A
     }
     
+    /**
+     * Verifies that a player must complete their full turn (move and build)
+     */
     @Test
     public void testMustCompleteFullTurn() throws Exception {
         setupCompleteGame();
@@ -306,6 +542,9 @@ public class ComprehensiveGameTest {
 
     // ========== Board Boundary Tests ==========
     
+    /**
+     * Verifies that the game enforces board boundaries correctly
+     */
     @Test
     public void testBoardBoundaries() throws Exception {
         setupCompleteGame();
@@ -328,6 +567,9 @@ public class ComprehensiveGameTest {
 
     // ========== Worker Ownership Tests ==========
     
+    /**
+     * Verifies that a player can only move their own workers
+     */
     @Test
     public void testWorkerOwnership() throws Exception {
         setupCompleteGame();
@@ -343,6 +585,9 @@ public class ComprehensiveGameTest {
 
     // ========== Game State Persistence Tests ==========
     
+    /**
+     * Verifies that the game state remains consistent throughout gameplay
+     */
     @Test
     public void testGameStateConsistency() throws Exception {
         setupCompleteGame();
