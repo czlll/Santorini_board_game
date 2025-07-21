@@ -6,6 +6,14 @@ public class Board {
     private static final int ROW = 5;
     private static final int COL = 5;
     private Cell[][] grid;
+    
+    /**
+     * Get the size of the board
+     * @return the size of the board (number of rows/columns)
+     */
+    public int getSize() {
+        return ROW;
+    }
 
     public Board(){
         grid = new Cell[5][5];
