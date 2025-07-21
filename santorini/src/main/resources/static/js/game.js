@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize the game
     function initGame() {
+        console.log('Initializing game...');
         fetchAvailableCards();
         fetchGameState();
     }
@@ -131,23 +132,31 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Show card selection modal if needed
         if (gameState.state === 'CARD_SELECTION' && !cardSelectionComplete) {
+            console.log('In CARD_SELECTION state, godCards:', gameState.godCards);
             // Check if we need to show the modal based on which players have cards
             const player0HasCard = gameState.godCards && gameState.godCards.player0;
             const player1HasCard = gameState.godCards && gameState.godCards.player1;
             
+            console.log('Player 0 has card:', player0HasCard, 'Player 1 has card:', player1HasCard);
+            
             if (!player0HasCard) {
+                console.log('Showing modal for Player 0');
                 currentPlayerSelectingCard = 0;
                 showCardSelectionModal();
             } else if (!player1HasCard) {
+                console.log('Showing modal for Player 1');
                 currentPlayerSelectingCard = 1;
                 showCardSelectionModal();
             } else {
                 // Both players have cards, hide modal and mark as complete
+                console.log('Both players have cards, hiding modal');
                 cardSelectionComplete = true;
+                cardSelectionModal.classList.add('hidden');
                 cardSelectionModal.style.display = 'none';
             }
         } else {
             // Not in card selection state or selection is complete, hide modal
+            cardSelectionModal.classList.add('hidden');
             cardSelectionModal.style.display = 'none';
         }
         
@@ -311,13 +320,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch available God Cards
     function fetchAvailableCards() {
+        console.log('Fetching available cards...');
         fetch('/api/game/cards')
             .then(response => response.json())
             .then(data => {
+                console.log('Available cards received:', data.cards);
                 availableCards = Array.from(data.cards);
                 renderCardList();
             })
             .catch(error => {
+                console.error('Error fetching cards:', error);
                 showMessage(`Error fetching cards: ${error}`, 'error');
             });
     }
@@ -360,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showCardSelectionModal() {
         const playerName = currentPlayerSelectingCard === 0 ? 'Player A' : 'Player B';
         cardSelectionPrompt.textContent = `${playerName}, choose your God Card:`;
+        cardSelectionModal.classList.remove('hidden');
         cardSelectionModal.style.display = 'flex';
     }
 
@@ -381,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     currentPlayerSelectingCard = 0;
                     cardSelectionComplete = true;
+                    cardSelectionModal.classList.add('hidden');
                     cardSelectionModal.style.display = 'none';
                 }
             } else {
@@ -418,4 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // This could be expanded to show God Card info in the UI
         // For now, it's handled by the game state display
     }
+
+    // Initialize the game when the page loads
+    initGame();
 });
