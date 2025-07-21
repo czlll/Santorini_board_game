@@ -96,6 +96,7 @@ const PlayerForm = () => {
                 <option value="Pan">Pan</option>
                 <option value="Hermes">Hermes</option>
                 <option value="Apollo">Apollo</option>
+                <option value="Hephaestus">Hephaestus</option>
               </select>
             </div>
           </div>
@@ -128,6 +129,7 @@ const PlayerForm = () => {
                 <option value="Pan">Pan</option>
                 <option value="Hermes">Hermes</option>
                 <option value="Apollo">Apollo</option>
+                <option value="Hephaestus">Hephaestus</option>
               </select>
             </div>
           </div>

@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import edu.cmu.cs214.hw3.game.action.build.BuildAction;
 import edu.cmu.cs214.hw3.game.action.build.DemeterBuild;
+import edu.cmu.cs214.hw3.game.action.build.HephaestusBuild;
 import edu.cmu.cs214.hw3.game.action.build.NormalBuild;
 import edu.cmu.cs214.hw3.game.action.move.*;
 import edu.cmu.cs214.hw3.game.action.wincheck.NormalWin;
@@ -96,6 +97,9 @@ public class Game {
                 case Apollo -> {
                     moveActions[0] = new ApolloMove();
                 }
+                case Hephaestus -> {
+                    buildActions[0] = new HephaestusBuild();
+                }
             }
 
 //        initialize god card action for player B
@@ -118,6 +122,9 @@ public class Game {
                 }
                 case Apollo -> {
                     moveActions[1] = new ApolloMove();
+                }
+                case Hephaestus -> {
+                    buildActions[1] = new HephaestusBuild();
                 }
             }
         }
@@ -319,7 +326,7 @@ public class Game {
      * skip the next action, the actual skip is decided by each action in action list
      */
     public void skipAction() throws Exception {
-        if (curPlayerAction == 5){
+        if (curPlayerAction == 5 || curPlayerAction == 5.5){
             history.add(gson.toJson(this));
             curPlayerAction = buildActions[curPlayer].skipBuildAction(curPlayerAction);
             curPlayer = buildActions[curPlayer].nextPlayer(curPlayerAction, curPlayer);
