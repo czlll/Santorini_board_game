@@ -60,6 +60,7 @@ public class Worker {
   /**
    * Moves this worker to the target position on the given board.
    * Updates both the worker's position and the board's occupation state.
+   * This method checks God Card abilities for special movement rules.
    *
    * @param board the game board
    * @param target the target position
@@ -70,7 +71,12 @@ public class Worker {
       throw new IllegalStateException("Worker has not been placed on the board");
     }
     
-    if (!board.canMove(position, target)) {
+    // Check if the move is allowed by the player's God Card
+    boolean canMove = (owner.getGodCard() != null) 
+        ? owner.getGodCard().canMove(board, this, target)
+        : board.canMove(position, target);
+    
+    if (!canMove) {
       return false;
     }
     
@@ -86,6 +92,7 @@ public class Worker {
 
   /**
    * Builds a block or dome at the target position on the given board.
+   * This method checks God Card abilities for special building rules.
    *
    * @param board the game board
    * @param target the target position
@@ -97,7 +104,12 @@ public class Worker {
       throw new IllegalStateException("Worker has not been placed on the board");
     }
     
-    if (!board.canBuild(position, target)) {
+    // Check if the build is allowed by the player's God Card
+    boolean canBuild = (owner.getGodCard() != null) 
+        ? owner.getGodCard().canBuild(board, this, target, isDome)
+        : board.canBuild(position, target);
+    
+    if (!canBuild) {
       return false;
     }
     

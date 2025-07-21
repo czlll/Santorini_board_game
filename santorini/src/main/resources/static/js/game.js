@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedWorker: null,
         isGameOver: false
     };
+    
+    let cardSelectionComplete = false;
 
     // DOM elements
     const gameBoard = document.getElementById('game-board');
@@ -17,6 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const workerSelection = document.getElementById('worker-selection');
     const worker0Button = document.getElementById('worker-0');
     const worker1Button = document.getElementById('worker-1');
+    const additionalBuildControls = document.getElementById('additional-build-controls');
+    const skipBuildButton = document.getElementById('skip-build-btn');
+    const cardSelectionModal = document.getElementById('card-selection-modal');
+    const cardSelectionPrompt = document.getElementById('card-selection-prompt');
+    const cardList = document.getElementById('card-list');
+
+    // God Card selection state
+    let availableCards = [];
+    let currentPlayerSelectingCard = 0;
 
     // Initialize the game
     initGame();
@@ -25,9 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
     resetButton.addEventListener('click', resetGame);
     worker0Button.addEventListener('click', () => selectWorker(0));
     worker1Button.addEventListener('click', () => selectWorker(1));
+    skipBuildButton.addEventListener('click', skipAdditionalBuild);
 
     // Initialize the game
     function initGame() {
+        fetchAvailableCards();
         fetchGameState();
     }
 
@@ -104,17 +117,47 @@ document.addEventListener('DOMContentLoaded', () => {
         stateElement.textContent = gameState.state;
         playerElement.textContent = gameState.currentPlayer || '';
         
-        // Show/hide worker selection buttons based on game state
+        // Show/hide controls based on game state
         if (gameState.state === 'MOVE') {
             workerSelection.classList.remove('hidden');
+            additionalBuildControls.classList.add('hidden');
+        } else if (gameState.state === 'ADDITIONAL_BUILD') {
+            workerSelection.classList.add('hidden');
+            additionalBuildControls.classList.remove('hidden');
         } else {
             workerSelection.classList.add('hidden');
+            additionalBuildControls.classList.add('hidden');
+        }
+        
+        // Show card selection modal if needed
+        if (gameState.state === 'CARD_SELECTION' && !cardSelectionComplete) {
+            // Check if we need to show the modal based on which players have cards
+            const player0HasCard = gameState.godCards && gameState.godCards.player0;
+            const player1HasCard = gameState.godCards && gameState.godCards.player1;
+            
+            if (!player0HasCard) {
+                currentPlayerSelectingCard = 0;
+                showCardSelectionModal();
+            } else if (!player1HasCard) {
+                currentPlayerSelectingCard = 1;
+                showCardSelectionModal();
+            } else {
+                // Both players have cards, hide modal and mark as complete
+                cardSelectionComplete = true;
+                cardSelectionModal.style.display = 'none';
+            }
+        } else {
+            // Not in card selection state or selection is complete, hide modal
+            cardSelectionModal.style.display = 'none';
         }
         
         // Show game over message
         if (gameState.isGameOver) {
             showMessage(`Game Over! ${gameState.winner} wins!`, 'success');
         }
+        
+        // Display God Card information
+        displayGodCardInfo();
     }
 
     // Handle cell click based on the current game state
@@ -143,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 moveWorker(x, y);
                 break;
             case 'BUILD':
+            case 'ADDITIONAL_BUILD':
                 buildBlock(x, y);
                 break;
             default:
@@ -240,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reset the game
     function resetGame() {
+        cardSelectionComplete = false;
         fetch('/api/game/reset', {
             method: 'POST'
         })
@@ -262,5 +307,115 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type) {
             messageBox.classList.add(type);
         }
+    }
+
+    // Fetch available God Cards
+    function fetchAvailableCards() {
+        fetch('/api/game/cards')
+            .then(response => response.json())
+            .then(data => {
+                availableCards = Array.from(data.cards);
+                renderCardList();
+            })
+            .catch(error => {
+                showMessage(`Error fetching cards: ${error}`, 'error');
+            });
+    }
+
+    // Render the card list in the modal
+    function renderCardList() {
+        cardList.innerHTML = '';
+        
+        // Create card descriptions
+        const cardDescriptions = {
+            'Demeter': 'Your Worker may build one additional time, but not on the same space.',
+            'Hephaestus': 'Your Worker may build one additional block (not dome) on top of your first block.',
+            'Minotaur': 'Your Worker may move into an opponent Worker\'s space, if their Worker can be forced one space straight backwards.',
+            'Pan': 'You also win if your Worker moves down two or more levels.'
+        };
+        
+        availableCards.forEach(cardName => {
+            const cardItem = document.createElement('div');
+            cardItem.className = 'card-item';
+            cardItem.dataset.cardName = cardName;
+            
+            const cardNameElement = document.createElement('div');
+            cardNameElement.className = 'card-name';
+            cardNameElement.textContent = cardName;
+            
+            const cardDescElement = document.createElement('div');
+            cardDescElement.className = 'card-description';
+            cardDescElement.textContent = cardDescriptions[cardName] || 'No description available.';
+            
+            cardItem.appendChild(cardNameElement);
+            cardItem.appendChild(cardDescElement);
+            
+            cardItem.addEventListener('click', () => selectCard(cardName));
+            
+            cardList.appendChild(cardItem);
+        });
+    }
+
+    // Show the card selection modal
+    function showCardSelectionModal() {
+        const playerName = currentPlayerSelectingCard === 0 ? 'Player A' : 'Player B';
+        cardSelectionPrompt.textContent = `${playerName}, choose your God Card:`;
+        cardSelectionModal.style.display = 'flex';
+    }
+
+    // Select a God Card
+    function selectCard(cardName) {
+        fetch(`/api/game/assign-card?playerId=${currentPlayerSelectingCard}&cardName=${cardName}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateGameState(data);
+                updateUI();
+                
+                // Check if we need to switch to the next player for card selection
+                if (data.state === 'CARD_SELECTION') {
+                    currentPlayerSelectingCard = 1;
+                    showCardSelectionModal();
+                } else {
+                    currentPlayerSelectingCard = 0;
+                    cardSelectionComplete = true;
+                    cardSelectionModal.style.display = 'none';
+                }
+            } else {
+                showMessage('Failed to assign God Card', 'error');
+            }
+        })
+        .catch(error => {
+            showMessage(`Error assigning card: ${error}`, 'error');
+        });
+    }
+
+    // Skip additional build
+    function skipAdditionalBuild() {
+        fetch('/api/game/skip-build', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateGameState(data);
+                renderBoard();
+                updateUI();
+                showMessage('Additional build skipped', 'success');
+            } else {
+                showMessage('Failed to skip build', 'error');
+            }
+        })
+        .catch(error => {
+            showMessage(`Error skipping build: ${error}`, 'error');
+        });
+    }
+
+    // Display God Card information
+    function displayGodCardInfo() {
+        // This could be expanded to show God Card info in the UI
+        // For now, it's handled by the game state display
     }
 });

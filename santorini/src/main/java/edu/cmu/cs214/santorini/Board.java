@@ -192,4 +192,20 @@ public class Board {
     // Cannot build on an occupied cell or a cell with a dome
     return !isOccupied[buildX][buildY] && !hasDome[buildX][buildY];
   }
+
+  /**
+   * Moves a worker from one position to another, updating the occupation state.
+   * This is used for special abilities like Minotaur's push.
+   *
+   * @param from the current position
+   * @param to the target position
+   */
+  public void moveWorkerPosition(Position from, Position to) {
+    if (!from.isWithinBounds() || !to.isWithinBounds()) {
+      throw new IllegalArgumentException("Positions must be within bounds");
+    }
+    
+    setOccupied(from, false);
+    setOccupied(to, true);
+  }
 }
