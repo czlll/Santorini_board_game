@@ -1,5 +1,7 @@
 package edu.cmu.cs214.santorini;
 
+import edu.cmu.cs214.santorini.godcards.GodCard;
+import edu.cmu.cs214.santorini.godcards.GodCardRegistry;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,14 +16,18 @@ public class Game {
   private Player winner;
   private Worker selectedWorker;
   private GameState state;
+  private Position lastBuildPosition; // For God Card abilities
+  private GodCard.BuildResult pendingBuildResult; // For additional builds
 
   /**
    * Enum representing the possible states of the game.
    */
   public enum GameState {
+    CARD_SELECTION, // Players are selecting their God Cards
     SETUP, // Players are placing their workers
     MOVE, // Current player needs to move a worker
     BUILD, // Current player needs to build after moving
+    ADDITIONAL_BUILD, // Current player can build again (God Card ability)
     GAME_OVER // Game is over, there is a winner
   }
 
@@ -31,9 +37,11 @@ public class Game {
   public Game() {
     this.board = new Board();
     this.players = new ArrayList<>(2);
-    this.state = GameState.SETUP;
+    this.state = GameState.CARD_SELECTION;
     this.winner = null;
     this.selectedWorker = null;
+    this.lastBuildPosition = null;
+    this.pendingBuildResult = GodCard.BuildResult.NONE;
   }
 
   /**
@@ -111,6 +119,64 @@ public class Game {
     return new ArrayList<>(players);
   }
 
+  /**
+   * Gets the last build position (used for God Card abilities).
+   *
+   * @return the last build position, or null if none
+   */
+  public Position getLastBuildPosition() {
+    return lastBuildPosition;
+  }
+
+  /**
+   * Gets the pending build result (used for God Card abilities).
+   *
+   * @return the pending build result
+   */
+  public GodCard.BuildResult getPendingBuildResult() {
+    return pendingBuildResult;
+  }
+
+  /**
+   * Assigns a God Card to a player.
+   *
+   * @param playerIndex the index of the player (0 or 1)
+   * @param cardName the name of the God Card
+   * @return true if the assignment was successful, false otherwise
+   */
+  public boolean assignGodCard(int playerIndex, String cardName) {
+    if (state != GameState.CARD_SELECTION) {
+      return false;
+    }
+    
+    if (playerIndex < 0 || playerIndex >= players.size()) {
+      return false;
+    }
+    
+    GodCard card = GodCardRegistry.createCard(cardName);
+    if (card == null) {
+      return false;
+    }
+    
+    players.get(playerIndex).setGodCard(card);
+    
+    // Check if both players have selected cards
+    boolean allCardsSelected = true;
+    for (Player player : players) {
+      if (player.getGodCard() == null) {
+        allCardsSelected = false;
+        break;
+      }
+    }
+    
+    if (allCardsSelected) {
+      state = GameState.SETUP;
+      currentPlayer = players.get(0); // Player A starts
+    }
+    
+    return true;
+  }
+
 
 
   /**
@@ -183,11 +249,40 @@ public class Game {
       return false;
     }
     
+    Position originalPosition = selectedWorker.getPosition();
+    
+    // Handle Minotaur's push ability
+    Worker pushedWorker = null;
+    Position pushPosition = null;
+    if (board.isOccupied(target) && currentPlayer.getGodCard() != null 
+        && "Minotaur".equals(currentPlayer.getGodCard().getName())) {
+      // Find the worker at the target position
+      pushedWorker = findWorkerAtPosition(target);
+      if (pushedWorker != null && pushedWorker.getOwner() != currentPlayer) {
+        // Calculate push position
+        int deltaX = target.getX() - originalPosition.getX();
+        int deltaY = target.getY() - originalPosition.getY();
+        pushPosition = new Position(target.getX() + deltaX, target.getY() + deltaY);
+      }
+    }
+    
     boolean success = selectedWorker.move(board, target);
     
     if (success) {
-      // Check if the worker has reached a level 3 tower (win condition)
-      if (board.getHeight(target) == 3) {
+      // Handle Minotaur push
+      if (pushedWorker != null && pushPosition != null) {
+        pushedWorker.setPosition(pushPosition);
+        board.setOccupied(pushPosition, true);
+      }
+      
+      // Check for God Card win conditions
+      boolean godCardWin = false;
+      if (currentPlayer.getGodCard() != null) {
+        godCardWin = currentPlayer.getGodCard().onAfterMove(board, selectedWorker, originalPosition, target);
+      }
+      
+      // Check if the worker has reached a level 3 tower (standard win condition)
+      if (board.getHeight(target) == 3 || godCardWin) {
         winner = currentPlayer;
         state = GameState.GAME_OVER;
       } else {
@@ -198,6 +293,23 @@ public class Game {
     
     return success;
   }
+  
+  /**
+   * Finds the worker at the specified position.
+   *
+   * @param position the position to search
+   * @return the worker at the position, or null if none found
+   */
+  private Worker findWorkerAtPosition(Position position) {
+    for (Player player : players) {
+      for (Worker worker : player.getWorkers()) {
+        if (position.equals(worker.getPosition())) {
+          return worker;
+        }
+      }
+    }
+    return null;
+  }
 
   /**
    * Builds a block or dome at the target position.
@@ -207,15 +319,44 @@ public class Game {
    * @return true if the build was successful, false otherwise
    */
   public boolean build(Position target, boolean isDome) {
-    if (state != GameState.BUILD || selectedWorker == null) {
+    if ((state != GameState.BUILD && state != GameState.ADDITIONAL_BUILD) || selectedWorker == null) {
       return false;
+    }
+    
+    // For additional builds, check restrictions
+    if (state == GameState.ADDITIONAL_BUILD) {
+      if (pendingBuildResult == GodCard.BuildResult.ADDITIONAL_BUILD_SAME) {
+        // Hephaestus: must build on same position, cannot build dome
+        if (!target.equals(lastBuildPosition) || isDome) {
+          return false;
+        }
+      } else if (pendingBuildResult == GodCard.BuildResult.ADDITIONAL_BUILD_DIFF) {
+        // Demeter: must build on different position, cannot build dome
+        if (target.equals(lastBuildPosition) || isDome) {
+          return false;
+        }
+      }
     }
     
     boolean success = selectedWorker.build(board, target, isDome);
     
     if (success) {
-      // Reset the selected worker
+      lastBuildPosition = target;
+      
+      // Check for God Card additional build abilities
+      if (state == GameState.BUILD && currentPlayer.getGodCard() != null) {
+        pendingBuildResult = currentPlayer.getGodCard().onAfterBuild(board, selectedWorker, target, isDome);
+        
+        if (pendingBuildResult != GodCard.BuildResult.NONE) {
+          state = GameState.ADDITIONAL_BUILD;
+          return true; // Don't end turn yet
+        }
+      }
+      
+      // Reset state and end turn
       selectedWorker = null;
+      lastBuildPosition = null;
+      pendingBuildResult = GodCard.BuildResult.NONE;
       
       // Switch to the next player and transition back to the move phase
       switchPlayer();
@@ -223,6 +364,28 @@ public class Game {
     }
     
     return success;
+  }
+  
+  /**
+   * Skips the additional build phase (for God Card abilities).
+   *
+   * @return true if the skip was successful, false otherwise
+   */
+  public boolean skipAdditionalBuild() {
+    if (state != GameState.ADDITIONAL_BUILD) {
+      return false;
+    }
+    
+    // Reset state and end turn
+    selectedWorker = null;
+    lastBuildPosition = null;
+    pendingBuildResult = GodCard.BuildResult.NONE;
+    
+    // Switch to the next player and transition back to the move phase
+    switchPlayer();
+    state = GameState.MOVE;
+    
+    return true;
   }
 
   /**
