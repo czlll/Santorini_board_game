@@ -1,5 +1,6 @@
 package edu.cmu.cs214.santorini;
 
+import edu.cmu.cs214.santorini.godcards.GodCard;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import java.util.List;
 public class Player {
   private final String name;
   private final List<Worker> workers;
+  private GodCard godCard;
 
   /**
    * Creates a new player with the given name.
@@ -90,6 +92,24 @@ public class Player {
     board.setOccupied(position, true);
     
     return true;
+  }
+
+  /**
+   * Sets the God Card for this player.
+   *
+   * @param godCard the God Card to assign to this player
+   */
+  public void setGodCard(GodCard godCard) {
+    this.godCard = godCard;
+  }
+
+  /**
+   * Gets the God Card assigned to this player.
+   *
+   * @return the God Card, or null if none is assigned
+   */
+  public GodCard getGodCard() {
+    return godCard;
   }
 
   @Override

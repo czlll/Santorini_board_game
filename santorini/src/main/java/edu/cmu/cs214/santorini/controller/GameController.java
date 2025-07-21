@@ -3,10 +3,12 @@ package edu.cmu.cs214.santorini.controller;
 import edu.cmu.cs214.santorini.Game;
 import edu.cmu.cs214.santorini.Player;
 import edu.cmu.cs214.santorini.Position;
+import edu.cmu.cs214.santorini.godcards.GodCardRegistry;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/game")
@@ -26,6 +28,22 @@ public class GameController {
         state.put("winner", game.getWinner() != null ? game.getWinner().getName() : null);
         state.put("board", getBoardState());
         state.put("isGameOver", game.isGameOver());
+        state.put("lastBuildPosition", game.getLastBuildPosition());
+        state.put("pendingBuildResult", game.getPendingBuildResult().toString());
+        
+        // Add God Card information
+        Map<String, Object> godCards = new HashMap<>();
+        for (int i = 0; i < game.getPlayers().size(); i++) {
+            Player player = game.getPlayers().get(i);
+            if (player.getGodCard() != null) {
+                Map<String, String> cardInfo = new HashMap<>();
+                cardInfo.put("name", player.getGodCard().getName());
+                cardInfo.put("description", player.getGodCard().getDescription());
+                godCards.put("player" + i, cardInfo);
+            }
+        }
+        state.put("godCards", godCards);
+        
         return state;
     }
 
@@ -91,6 +109,30 @@ public class GameController {
     @PostMapping("/build")
     public Map<String, Object> build(@RequestParam int x, @RequestParam int y, @RequestParam boolean dome) {
         boolean success = game.build(new Position(x, y), dome);
+        Map<String, Object> response = getGameState();
+        response.put("success", success);
+        return response;
+    }
+
+    @GetMapping("/cards")
+    public Map<String, Object> getAvailableCards() {
+        Map<String, Object> response = new HashMap<>();
+        Set<String> cards = GodCardRegistry.getAvailableCards();
+        response.put("cards", cards);
+        return response;
+    }
+
+    @PostMapping("/assign-card")
+    public Map<String, Object> assignGodCard(@RequestParam int playerId, @RequestParam String cardName) {
+        boolean success = game.assignGodCard(playerId, cardName);
+        Map<String, Object> response = getGameState();
+        response.put("success", success);
+        return response;
+    }
+
+    @PostMapping("/skip-build")
+    public Map<String, Object> skipAdditionalBuild() {
+        boolean success = game.skipAdditionalBuild();
         Map<String, Object> response = getGameState();
         response.put("success", success);
         return response;
