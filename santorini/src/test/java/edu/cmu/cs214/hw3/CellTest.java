@@ -1,7 +1,7 @@
 package edu.cmu.cs214.hw3;
 
-import edu.cmu.cs214.hw3.game.Cell;
-import edu.cmu.cs214.hw3.game.Worker;
+import edu.cmu.cs214.santorini.Cell;
+import edu.cmu.cs214.santorini.Worker;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

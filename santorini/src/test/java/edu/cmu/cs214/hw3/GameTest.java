@@ -1,6 +1,6 @@
 package edu.cmu.cs214.hw3;
 
-import edu.cmu.cs214.hw3.game.*;
+import edu.cmu.cs214.santorini.*;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -1,9 +1,9 @@
 package edu.cmu.cs214.hw3.GodCardTest;
 
-import edu.cmu.cs214.hw3.game.Board;
-import edu.cmu.cs214.hw3.game.Game;
-import edu.cmu.cs214.hw3.game.GodCard;
-import edu.cmu.cs214.hw3.game.Player;
+import edu.cmu.cs214.santorini.Board;
+import edu.cmu.cs214.santorini.Game;
+import edu.cmu.cs214.santorini.Player;
+import edu.cmu.cs214.santorini.godcards.GodCardRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,8 +19,8 @@ public class HermesTest {
         Player playerB = new Player("B");
         Board board = new Board();
 
-        playerA.setGodCard(GodCard.Hermes);
-        playerB.setGodCard(GodCard.Demeter);
+        playerA.setGodCard(GodCardRegistry.createCard("Pan"));
+        playerB.setGodCard(GodCardRegistry.createCard("Demeter"));
 
         game = new Game(board, playerA, playerB);
 

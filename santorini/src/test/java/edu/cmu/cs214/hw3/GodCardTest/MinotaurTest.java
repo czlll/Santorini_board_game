@@ -1,9 +1,9 @@
 package edu.cmu.cs214.hw3.GodCardTest;
 
-import edu.cmu.cs214.hw3.game.Board;
-import edu.cmu.cs214.hw3.game.Game;
-import edu.cmu.cs214.hw3.game.GodCard;
-import edu.cmu.cs214.hw3.game.Player;
+import edu.cmu.cs214.santorini.Board;
+import edu.cmu.cs214.santorini.Game;
+import edu.cmu.cs214.santorini.godcards.GodCardRegistry;
+import edu.cmu.cs214.santorini.Player;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,8 +20,8 @@ public class MinotaurTest {
         Player playerB = new Player("B");
         Board board = new Board();
 
-        playerA.setGodCard(GodCard.Minotaur);
-        playerB.setGodCard(GodCard.Pan);
+        playerA.setGodCard(GodCardRegistry.createCard("Minotaur"));
+        playerB.setGodCard(GodCardRegistry.createCard("Pan"));
 
         game = new Game(board, playerA, playerB);
 
