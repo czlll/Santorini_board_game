@@ -62,12 +62,12 @@ public class SantoriniPerformanceE2ETest extends BaseE2ETest {
             
             // Check page responsiveness every 10 rounds
             if (round % 10 == 0) {
-                assertTrue(gamePage.gameBoard.isVisible());
+                assertTrue(gamePage.getGameBoard().isVisible());
             }
         }
         
         // Verify game is still operational
-        assertTrue(gamePage.gameBoard.isVisible());
+        assertTrue(gamePage.getGameBoard().isVisible());
     }
     
     @Test
@@ -80,7 +80,7 @@ public class SantoriniPerformanceE2ETest extends BaseE2ETest {
         gamePage.waitForGameToLoad();
         
         // Verify core elements are present and functional
-        assertTrue(gamePage.gameBoard.isVisible());
+        assertTrue(gamePage.getGameBoard().isVisible());
         
         // Test JavaScript functionality
         page.evaluate("() => console.log('JavaScript test')");
@@ -112,7 +112,7 @@ public class SantoriniPerformanceE2ETest extends BaseE2ETest {
         
         // Verify game still loads and functions under slow network
         gamePage.waitForGameToLoad();
-        assertTrue(gamePage.gameBoard.isVisible());
+        assertTrue(gamePage.getGameBoard().isVisible());
     }
     
     private void setupBasicGameScenario(SantoriniGamePage gamePage) {

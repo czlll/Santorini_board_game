@@ -3,6 +3,7 @@ package edu.cmu.cs214.hw3.e2e.pages;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.WaitForSelectorState;
+import com.microsoft.playwright.options.MouseButton;
 
 /**
  * Page Object Model for Santorini Game Page
@@ -110,7 +111,7 @@ public class SantoriniGamePage {
         
         if (isDome) {
             // Right-click to build dome
-            cell.click(new Locator.ClickOptions().setButton("right"));
+            cell.click(new Locator.ClickOptions().setButton(MouseButton.RIGHT));
         } else {
             // Left-click to build normal level
             cell.click();
@@ -193,6 +194,13 @@ public class SantoriniGamePage {
     public void waitForGamePhase(String phase) {
         page.waitForSelector(String.format("text=*%s*", phase),
             new Page.WaitForSelectorOptions().setTimeout(5000));
+    }
+    
+    /**
+     * Get the game board locator for direct access in tests
+     */
+    public Locator getGameBoard() {
+        return gameBoard;
     }
     
     /**

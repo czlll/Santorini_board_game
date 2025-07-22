@@ -199,17 +199,17 @@ public class SantoriniE2ETest extends BaseE2ETest {
         // Test desktop size
         page.setViewportSize(1920, 1080);
         gamePage.navigateToGame();
-        assertTrue(gamePage.gameBoard.isVisible());
+        assertTrue(gamePage.getGameBoard().isVisible());
         
         // Test tablet size
         page.setViewportSize(768, 1024);
         page.reload();
-        assertTrue(gamePage.gameBoard.isVisible());
+        assertTrue(gamePage.getGameBoard().isVisible());
         
         // Test mobile size
         page.setViewportSize(375, 667);
         page.reload();
-        assertTrue(gamePage.gameBoard.isVisible());
+        assertTrue(gamePage.getGameBoard().isVisible());
         
         gamePage.takeScreenshot("mobile-view");
     }
