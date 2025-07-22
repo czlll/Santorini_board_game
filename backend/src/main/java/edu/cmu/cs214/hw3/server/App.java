@@ -11,6 +11,10 @@ import fi.iki.elonen.router.RouterNanoHTTPD;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Hello world!
@@ -40,8 +44,13 @@ public class App extends RouterNanoHTTPD {
 //        check for which route client is requesting
         String url = session.getUri();
         switch (url) {
-//            default routing, check game connection
+//            default routing, serve frontend
             case "/" -> {
+                return serveStaticFile("index.html");
+            }
+            
+//            API endpoint for connection check
+            case "/api/health" -> {
                 Response response1 = newFixedLengthResponse("Hello world");
                 response1.addHeader("Access-Control-Allow-Origin", "*");
                 return response1;
@@ -172,8 +181,48 @@ public class App extends RouterNanoHTTPD {
             }
         }
 
-        return null;
+        // Try to serve static files
+        if (url.startsWith("/static/")) {
+            return serveStaticFile(url.substring(1)); // Remove leading slash
+        }
 
+        // For React Router, serve index.html for unknown routes
+        return serveStaticFile("index.html");
+    }
+
+    /**
+     * Serve static files from resources
+     */
+    private Response serveStaticFile(String filename) {
+        try {
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("static/" + filename);
+            if (inputStream == null) {
+                return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "File not found");
+            }
+            
+            String mimeType = getMimeType(filename);
+            Response response = newFixedLengthResponse(Response.Status.OK, mimeType, inputStream, inputStream.available());
+            response.addHeader("Access-Control-Allow-Origin", "*");
+            return response;
+        } catch (IOException e) {
+            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "Error serving file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get MIME type for file
+     */
+    private String getMimeType(String filename) {
+        if (filename.endsWith(".html")) return "text/html";
+        if (filename.endsWith(".css")) return "text/css";
+        if (filename.endsWith(".js")) return "application/javascript";
+        if (filename.endsWith(".png")) return "image/png";
+        if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+        if (filename.endsWith(".gif")) return "image/gif";
+        if (filename.endsWith(".svg")) return "image/svg+xml";
+        if (filename.endsWith(".ico")) return "image/x-icon";
+        if (filename.endsWith(".json")) return "application/json";
+        return "application/octet-stream";
     }
 
     /**
