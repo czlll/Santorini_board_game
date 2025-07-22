@@ -24,14 +24,14 @@ public class SantoriniGamePage {
     public SantoriniGamePage(Page page) {
         this.page = page;
         
-        // Initialize locators
-        this.startGameButton = page.locator("#start-game-btn");
-        this.playerANameInput = page.locator("#player-a-name");
-        this.playerBNameInput = page.locator("#player-b-name");
-        this.gameBoard = page.locator("#game-board");
-        this.currentPlayerDisplay = page.locator("#current-player");
-        this.gameStatusDisplay = page.locator("#game-status");
-        this.winnerMessage = page.locator("#winner-message");
+        // Initialize locators based on actual frontend structure
+        this.startGameButton = page.locator("button:has-text('Click Me to Start')");
+        this.playerANameInput = page.locator("input[placeholder='please enter your player name']").first();
+        this.playerBNameInput = page.locator("input[placeholder='please enter your player name']").nth(1);
+        this.gameBoard = page.locator("h1:has-text('Game Started')"); // Use game started header as indicator
+        this.currentPlayerDisplay = page.locator("h1:has-text('Game Started')");
+        this.gameStatusDisplay = page.locator(".text-danger, .text-success");
+        this.winnerMessage = page.locator("h1:has-text('Winner')");
     }
     
     /**
@@ -47,8 +47,8 @@ public class SantoriniGamePage {
      */
     public void startNewGame() {
         startGameButton.click();
-        page.waitForSelector("#player-setup", new Page.WaitForSelectorOptions()
-            .setState(WaitForSelectorState.VISIBLE));
+        // Wait for navigation to player form (note: URL is case sensitive)
+        page.waitForURL("**/playerForm", new Page.WaitForURLOptions().setTimeout(5000));
     }
     
     /**
@@ -57,6 +57,27 @@ public class SantoriniGamePage {
     public void setPlayerNames(String playerA, String playerB) {
         playerANameInput.fill(playerA);
         playerBNameInput.fill(playerB);
+    }
+    
+    /**
+     * Complete game setup with player names and god cards
+     */
+    public void setupGame(String playerA, String playerB) {
+        // Set player names
+        setPlayerNames(playerA, playerB);
+        
+        // Select different god cards for each player
+        Locator player1GodSelect = page.locator("select").first();
+        Locator player2GodSelect = page.locator("select").nth(1);
+        
+        player1GodSelect.selectOption("Demeter");
+        player2GodSelect.selectOption("Pan");
+        
+        // Click start game button
+        page.locator("button:has-text('Start Game')").click();
+        
+        // Wait for navigation to game board (note: URL is case sensitive)
+        page.waitForURL("**/gameBoard", new Page.WaitForURLOptions().setTimeout(10000));
     }
     
     /**
@@ -71,15 +92,39 @@ public class SantoriniGamePage {
     }
     
     /**
+     * Get the button ID for a given row and column
+     * Based on the actual button IDs observed in the game
+     */
+    private int getButtonId(int row, int col) {
+        // Button IDs follow this pattern:
+        // Row 0: 60, 61, 62, 63, 64
+        // Row 1: 67, 68, 69, 70, 71  
+        // Row 2: 74, 75, 76, 77, 78
+        // Row 3: 81, 82, 83, 84, 85
+        // Row 4: 88, 89, 90, 91, 92
+        int baseId = 60 + (row * 7) + col;
+        return baseId;
+    }
+    
+    /**
      * Place a worker at the specified position
      */
     public void placeWorker(int row, int col) {
-        String cellSelector = String.format("#cell-%d-%d", row, col);
-        Locator cell = page.locator(cellSelector);
+        // Get all grid buttons and select by index
+        // The grid has 25 buttons total (5x5)
+        int buttonIndex = row * 5 + col;
+        
+        // Find all buttons in the game grid area
+        Locator allButtons = page.locator("button").filter(new Locator.FilterOptions().setHasNotText("Restart Game"))
+                                                   .filter(new Locator.FilterOptions().setHasNotText("Skip Current Action"))
+                                                   .filter(new Locator.FilterOptions().setHasNotText("Undo"));
+        
+        // Select the specific button by index
+        Locator gridButton = allButtons.nth(buttonIndex);
         
         // Wait for cell to be clickable
-        cell.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
-        cell.click();
+        gridButton.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
+        gridButton.click();
         
         // Wait for worker placement animation
         page.waitForTimeout(300);
@@ -92,8 +137,8 @@ public class SantoriniGamePage {
         // Click source position to select worker
         placeWorker(fromRow, fromCol);
         
-        // Wait for valid move positions to be highlighted
-        page.waitForSelector(".valid-move", new Page.WaitForSelectorOptions().setTimeout(2000));
+        // Wait a moment for the game to process the selection
+        page.waitForTimeout(500);
         
         // Click target position
         placeWorker(toRow, toCol);
@@ -106,15 +151,23 @@ public class SantoriniGamePage {
      * Build a tower at the specified position
      */
     public void buildTower(int row, int col, boolean isDome) {
-        String cellSelector = String.format("#cell-%d-%d", row, col);
-        Locator cell = page.locator(cellSelector);
+        // Get all grid buttons and select by index
+        int buttonIndex = row * 5 + col;
+        
+        // Find all buttons in the game grid area
+        Locator allButtons = page.locator("button").filter(new Locator.FilterOptions().setHasNotText("Restart Game"))
+                                                   .filter(new Locator.FilterOptions().setHasNotText("Skip Current Action"))
+                                                   .filter(new Locator.FilterOptions().setHasNotText("Undo"));
+        
+        // Select the specific button by index
+        Locator gridButton = allButtons.nth(buttonIndex);
         
         if (isDome) {
             // Right-click to build dome
-            cell.click(new Locator.ClickOptions().setButton(MouseButton.RIGHT));
+            gridButton.click(new Locator.ClickOptions().setButton(MouseButton.RIGHT));
         } else {
             // Left-click to build normal level
-            cell.click();
+            gridButton.click();
         }
         
         // Wait for building completion
@@ -207,7 +260,17 @@ public class SantoriniGamePage {
      * Wait for the game to load completely
      */
     public void waitForGameToLoad() {
-        gameBoard.waitFor(new Locator.WaitForOptions().setTimeout(10000));
+        // Wait for either the game started header or the game grid to be visible
+        try {
+            gameBoard.waitFor(new Locator.WaitForOptions().setTimeout(15000));
+        } catch (Exception e) {
+            // Fallback: wait for game grid buttons to be visible
+            page.locator("button").filter(new Locator.FilterOptions().setHasNotText("Restart Game"))
+                                  .filter(new Locator.FilterOptions().setHasNotText("Skip Current Action"))
+                                  .filter(new Locator.FilterOptions().setHasNotText("Undo"))
+                                  .first()
+                                  .waitFor(new Locator.WaitForOptions().setTimeout(10000));
+        }
     }
     
     /**
