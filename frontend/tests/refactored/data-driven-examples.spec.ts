@@ -33,6 +33,8 @@ test.describe('Data-Driven Test Examples - Multiple Formats', () => {
       5: async () => {
         // Apollo换位步骤后立即验证
         await test.step('验证Apollo换位能力使用', async () => {
+          // 等待一点时间确保状态快照已捕获
+          await new Promise(resolve => setTimeout(resolve, 100));
           const swapResult = await engine.validateApolloSwapUsingStateComparison(4, 5);
           expect(swapResult).toBe(true);
           console.log('✅ Apollo换位能力实时验证完成');
@@ -41,6 +43,7 @@ test.describe('Data-Driven Test Examples - Multiple Formats', () => {
       7: async () => {
         // Hermes第一次特殊移动后验证
         await test.step('验证Hermes特殊移动能力', async () => {
+          await new Promise(resolve => setTimeout(resolve, 100));
           const enhancedMoveResult = await engine.validateHermesEnhancedMoveUsingStateComparison(6, 7);
           expect(enhancedMoveResult).toBe(true);
           console.log('✅ Hermes特殊移动能力实时验证完成');
@@ -49,6 +52,7 @@ test.describe('Data-Driven Test Examples - Multiple Formats', () => {
       11: async () => {
         // Hermes第二次特殊移动后验证
         await test.step('验证Hermes第二次特殊移动', async () => {
+          await new Promise(resolve => setTimeout(resolve, 100));
           const enhancedMoveResult = await engine.validateHermesEnhancedMoveUsingStateComparison(10, 11);
           expect(enhancedMoveResult).toBe(true);
           console.log('✅ Hermes第二次特殊移动验证完成');

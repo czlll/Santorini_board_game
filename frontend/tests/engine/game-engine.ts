@@ -107,15 +107,27 @@ export class SantoriniTestEngine {
     
     // 1. 设置游戏
     await this.setupGame(scenario.setup);
+    // 捕获初始状态
+    await this.captureStateSnapshot(0);
     
     // 2. 按步骤执行，在指定步骤进行验证
     for (const move of scenario.moves) {
+      console.log(`执行步骤 ${move.step}: ${move.type} by ${move.player}`);
       await this.executeMove(move);
       await this.page.waitForTimeout(300);
       
+      // 标记步骤已执行并捕获快照
+      if (move.step) {
+        this.executedSteps.add(move.step);
+        await this.captureStateSnapshot(move.step);
+        console.log(`✅ 步骤 ${move.step} 状态快照已捕获`);
+      }
+      
       // 检查是否需要在此步骤进行验证
-      if (stepValidations[move.step]) {
+      if (move.step && stepValidations[move.step]) {
         console.log(`在步骤 ${move.step} 后进行验证`);
+        // 确保快照捕获完成后再进行验证
+        await this.page.waitForTimeout(100);
         await stepValidations[move.step]();
       }
     }
@@ -726,13 +738,22 @@ export class SantoriniTestEngine {
    * 在指定步骤拍摄状态快照
    */
   async captureStateSnapshot(stepNumber: number): Promise<void> {
-    const gameState = await this.getCurrentGameState();
-    this.stateSnapshots.set(stepNumber, {
-      step: stepNumber,
-      timestamp: Date.now(),
-      gameState: JSON.parse(JSON.stringify(gameState)) // 深拷贝
-    });
-    console.log(`状态快照已保存: 步骤 ${stepNumber}`);
+    try {
+      const gameState = await this.getCurrentGameState();
+      const snapshot = {
+        step: stepNumber,
+        timestamp: Date.now(),
+        gameState: JSON.parse(JSON.stringify(gameState)) // 深拷贝
+      };
+      
+      this.stateSnapshots.set(stepNumber, snapshot);
+      console.log(`✅ 状态快照已保存: 步骤 ${stepNumber}`);
+      console.log(`   - 工人位置: Player1=${gameState.workerPositions.player1.length}, Player2=${gameState.workerPositions.player2.length}`);
+      console.log(`   - 建筑物数量: ${gameState.buildingCounts.total}`);
+    } catch (error) {
+      console.error(`❌ 捕获步骤 ${stepNumber} 状态快照失败:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -746,10 +767,16 @@ export class SantoriniTestEngine {
    * 对比两个步骤之间的状态变化
    */
   compareStates(beforeStep: number, afterStep: number): any {
+    console.log(`尝试对比状态: 步骤 ${beforeStep} -> ${afterStep}`);
+    console.log(`可用的快照步骤:`, Array.from(this.stateSnapshots.keys()));
+    
     const beforeState = this.getStateSnapshot(beforeStep);
     const afterState = this.getStateSnapshot(afterStep);
     
     if (!beforeState || !afterState) {
+      console.error(`快照查找失败:`);
+      console.error(`- 步骤 ${beforeStep} 快照:`, beforeState ? '存在' : '不存在');
+      console.error(`- 步骤 ${afterStep} 快照:`, afterState ? '存在' : '不存在');
       throw new Error(`无法找到步骤 ${beforeStep} 或 ${afterStep} 的状态快照`);
     }
     
