@@ -1,0 +1,144 @@
+# Demeter双重建造能力测试场景
+# 测试Demeter神卡的可选第二次建造能力
+
+id: demeter_double_build_advanced
+name: Demeter高级双重建造测试
+description: |
+  测试Demeter神卡在复杂场景下的双重建造能力，
+  包括建造限制和策略选择
+version: "1.2"
+tags:
+  - demeter
+  - double-build
+  - god-card
+  - advanced
+  - strategy
+
+setup:
+  players:
+    player1:
+      name: Demeter_Alice
+      godCard: Demeter
+    player2:
+      name: Strategy_Bob
+      godCard: Athena
+  boardSize:
+    width: 5
+    height: 5
+
+# 游戏移动序列
+moves:
+  # === 工人放置阶段 ===
+  - step: 1
+    type: place_worker
+    player: player1
+    to: {x: 2, y: 2}  # 中心位置，便于建造
+    metadata:
+      workerIndex: 0
+      description: "Demeter在中心放置工人，为后续建造做准备"
+      
+  - step: 2
+    type: place_worker
+    player: player1
+    to: {x: 1, y: 2}  # 相邻位置
+    metadata:
+      workerIndex: 1
+      description: "Demeter第二个工人放置在相邻位置"
+      
+  - step: 3
+    type: place_worker
+    player: player2
+    to: {x: 4, y: 4}  # 远离Demeter
+    metadata:
+      workerIndex: 0
+      description: "Athena工人放置在远离Demeter的位置"
+      
+  - step: 4  
+    type: place_worker
+    player: player2
+    to: {x: 0, y: 0}  # 另一个角落
+    metadata:
+      workerIndex: 1
+      description: "Athena第二个工人放置在对角"
+
+  # === 游戏进行阶段 ===
+  - step: 5
+    type: move
+    player: player1
+    from: {x: 2, y: 2}
+    to: {x: 2, y: 3}   # 移动到可以建造的位置
+    metadata:
+      description: "Demeter工人移动到可以执行双重建造的位置"
+      strategy: "为双重建造创造条件"
+      
+  # 第一次建造（必须）
+  - step: 6
+    type: build
+    player: player1
+    to: {x: 1, y: 3}
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter执行第一次建造（必须）"
+      
+  # 第二次建造（可选，Demeter特殊能力）
+  - step: 7
+    type: build
+    player: player1
+    to: {x: 3, y: 3}
+    metadata:
+      buildType: block
+      level: 1
+      isOptional: true
+      specialAbility: demeter_double_build
+      description: "Demeter使用特殊能力进行第二次建造"
+      restriction: "不能在同一位置建造两次"
+
+# 预期结果验证
+expectedOutcome:
+  gameState: in_progress
+  boardState:
+    "2,3": 
+      worker: {player: player1, index: 0}
+    "1,2":
+      worker: {player: player1, index: 1}  
+    "1,3":
+      level: 1
+      buildHistory: [{player: player1, step: 6}]
+    "3,3":
+      level: 1  
+      buildHistory: [{player: player1, step: 7}]
+  validations:
+    - type: worker_position
+      expected: {player1: [[2,3], [1,2]], player2: [[4,4], [0,0]]}
+    - type: building_count
+      expected: {total: 2, by_player1: 2, by_player2: 0}
+    - type: demeter_ability_used
+      expected: true
+
+# 测试变体（可选的额外测试）
+variants:
+  - name: demeter_skip_second_build
+    description: "测试Demeter跳过第二次建造"
+    modifyMoves:
+      remove: [7]  # 移除第二次建造步骤
+      
+  - name: demeter_blocked_second_build  
+    description: "测试第二次建造被阻挡的情况"
+    modifySetup:
+      boardState:
+        "3,3": {level: 4}  # 预先放置障碍
+
+# 元数据
+metadata:
+  author: Game Test Team
+  created: "2024-01-15"
+  lastModified: "2024-01-20"
+  difficulty: advanced
+  estimatedDuration: 45s
+  relatedScenarios:
+    - demeter_basic_build
+    - demeter_vs_athena
+  notes: |
+    这个场景重点测试Demeter的双重建造在实际游戏中的应用，
+    包括策略选择和限制条件的验证。

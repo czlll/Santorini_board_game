@@ -36,7 +36,7 @@ public class App extends RouterNanoHTTPD {
 
 //    start service with port 8080
     public static void main(String[] args) throws IOException {
-        new App(8080);
+        new App(12000);
     }
 
     @Override

@@ -20,7 +20,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PORT=12001 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "test:e2e": "playwright test",
@@ -28,6 +28,10 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:e2e:decoupled": "playwright test tests/refactored/",
+    "test:e2e:original": "playwright test tests/ --ignore tests/refactored/",
+    "test:scenarios": "playwright test tests/refactored/data-driven-examples.spec.ts",
+    "test:god-cards": "playwright test tests/refactored/god-cards-decoupled.spec.ts",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -49,6 +53,8 @@
     ]
   },
   "devDependencies": {
-    "@playwright/test": "^1.54.2"
+    "@playwright/test": "^1.54.2",
+    "@types/js-yaml": "^4.0.5",
+    "js-yaml": "^4.1.0"
   }
 }

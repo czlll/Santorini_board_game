@@ -25,7 +25,7 @@ const PlayerForm = () => {
       var config = {
         method: "get",
         url:
-          "http://localhost:8080/initialGame?playerOneName=" +
+          "http://localhost:12000/initialGame?playerOneName=" +
           playerOneName +
           "&playerTwoName=" +
           playerTwoName +

@@ -1,0 +1,61 @@
+[Event "Apollo Swap Test"]
+[Site "Santorini Test Suite"]  
+[Date "2024.01.15"]
+[Round "1"]
+[Player1 "Apollo_Alice"]
+[Player2 "Normal_Bob"]
+[God1 "Apollo"]
+[God2 "Demeter"]
+[Result "In_Progress"]
+[Difficulty "Basic"]
+[Tags "apollo,swap,god-card,basic"]
+[Duration "30s"]
+[Description "测试Apollo神卡与敌方工人交换位置的基本能力"]
+
+; === 工人放置阶段 ===
+; Alice (Apollo) 放置工人
+1. P1@a1    ; Player1工人0放置在a1位置
+1... P1@b2  ; Player1工人1放置在b2位置
+
+; Bob (Demeter) 放置工人  
+2. P2@b1    ; Player2工人0放置在b1位置
+2... P2@d4  ; Player2工人1放置在d4位置
+
+; === 游戏进行阶段 ===
+; Apollo使用换位特殊能力
+3. P1:a1→b1* ; Apollo工人从a1移动到b1，*表示特殊能力（换位）
+              ; 结果：Alice的工人到达b1，Bob的工人被换到a1
+
+; 移动符号说明:
+; P1/P2 = Player1/Player2  
+; @ = 放置工人
+; → = 移动工人
+; + = 建造方块
+; # = 建造圆顶
+; * = 特殊能力
+; ! = 好的移动
+; ? = 可疑的移动
+; !! = 优秀的移动
+; ?? = 严重错误
+; !? = 有趣的移动
+; ?! = 可疑但可能有效
+
+; 位置编码：
+; 使用标准象棋记法：a1-e5
+;   a b c d e
+; 1 □ □ □ □ □ 
+; 2 □ □ □ □ □
+; 3 □ □ □ □ □
+; 4 □ □ □ □ □  
+; 5 □ □ □ □ □
+
+; 预期棋盘状态:
+; a1: P2工人0 (被Apollo换位过来)
+; b1: P1工人0 (Apollo使用换位能力)  
+; b2: P1工人1
+; d4: P2工人1
+
+; 验证点:
+; - Apollo成功与敌方工人交换位置
+; - 游戏状态保持进行中
+; - 双方工人位置正确更新

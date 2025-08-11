@@ -111,7 +111,7 @@ const GameBoard = () => {
   const loadGame = () => {
     var config = {
       method: "get",
-      url: "http://localhost:8080/getGameInfo",
+      url: "http://localhost:12000/getGameInfo",
       headers: {},
     };
     axios(config)
@@ -211,7 +211,7 @@ const GameBoard = () => {
         var config = {
           method: "get",
           url:
-            "http://localhost:8080/moveWorker?curPlayerAction=" +
+            "http://localhost:12000/moveWorker?curPlayerAction=" +
             curPlayerAction +
             "&row=" +
             prevGridX +
@@ -269,7 +269,7 @@ const GameBoard = () => {
         var config = {
           method: "get",
           url:
-            "http://localhost:8080/commandBuild?curPlayerAction=" +
+            "http://localhost:12000/commandBuild?curPlayerAction=" +
             curPlayerAction +
             "&row=" +
             prevGridX +
@@ -316,7 +316,7 @@ const GameBoard = () => {
     } else {
       var config = {
         method: "get",
-        url: "http://localhost:8080/skipAction",
+        url: "http://localhost:12000/skipAction",
         headers: {},
       };
 
@@ -338,7 +338,7 @@ const GameBoard = () => {
   const triggerUndo = () => {
     var config = {
       method: "get",
-      url: "http://localhost:8080/triggerUndo",
+      url: "http://localhost:12000/triggerUndo",
       headers: {},
     };
     axios(config)

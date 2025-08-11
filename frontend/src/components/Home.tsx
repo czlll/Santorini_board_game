@@ -8,7 +8,7 @@ const Home = () => {
   const startGame = () => {
     var config = {
       method: "get",
-      url: "http://localhost:8080/api/health",
+      url: "http://localhost:12000/api/health",
       headers: {},
     };
 
