@@ -270,11 +270,72 @@ export class SantoriniTestEngine {
    * 执行特殊动作（如神卡技能）
    */
   private async executeSpecialAction(move: GameMove): Promise<void> {
-    // 根据具体的神卡能力实现特殊动作
-    // 这里可以根据 move.metadata 中的信息执行不同的特殊动作
-    const position = this.positionToGridIndex(move.to);
+    console.log(`执行特殊动作: ${move.metadata?.specialAbility}`);
+    
+    switch (move.metadata?.specialAbility) {
+      case 'apollo_swap':
+        await this.executeApolloSwap(move);
+        break;
+      case 'hermes_move':
+        await this.executeHermesMove(move);
+        break;
+      default:
+        // 默认处理：点击目标位置
+        console.log('执行默认特殊动作');
+        const position = this.positionToGridIndex(move.to);
+        const gridButtons = this.getGridButtons();
+        await gridButtons.nth(position).click();
+    }
+  }
+
+  /**
+   * 执行Apollo换位动作
+   */
+  private async executeApolloSwap(move: GameMove): Promise<void> {
+    if (!move.from) {
+      throw new Error('Apollo换位需要起始位置');
+    }
+    
+    console.log(`执行Apollo换位: 从(${move.from.x}, ${move.from.y})到(${move.to.x}, ${move.to.y})`);
+    
     const gridButtons = this.getGridButtons();
-    await gridButtons.nth(position).click();
+    
+    // 1. 首先点击Apollo工人的起始位置（选择要移动的工人）
+    const fromPosition = this.positionToGridIndex(move.from);
+    await gridButtons.nth(fromPosition).click();
+    await this.page.waitForTimeout(200);
+    
+    // 2. 然后点击目标位置（与对手工人换位）
+    const toPosition = this.positionToGridIndex(move.to);
+    await gridButtons.nth(toPosition).click();
+    await this.page.waitForTimeout(200);
+    
+    console.log(`✅ Apollo换位动作执行完成`);
+  }
+
+  /**
+   * 执行Hermes特殊移动
+   */
+  private async executeHermesMove(move: GameMove): Promise<void> {
+    if (!move.from) {
+      throw new Error('Hermes特殊移动需要起始位置');
+    }
+    
+    console.log(`执行Hermes特殊移动: 从(${move.from.x}, ${move.from.y})到(${move.to.x}, ${move.to.y})`);
+    
+    const gridButtons = this.getGridButtons();
+    
+    // 1. 选择Hermes工人
+    const fromPosition = this.positionToGridIndex(move.from);
+    await gridButtons.nth(fromPosition).click();
+    await this.page.waitForTimeout(200);
+    
+    // 2. 移动到目标位置（可能是远距离移动）
+    const toPosition = this.positionToGridIndex(move.to);
+    await gridButtons.nth(toPosition).click();
+    await this.page.waitForTimeout(200);
+    
+    console.log(`✅ Hermes特殊移动执行完成`);
   }
 
   /**
