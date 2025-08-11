@@ -3,6 +3,7 @@
 export interface GameMove {
   type: 'place_worker' | 'move' | 'build' | 'special_action';
   player: 'player1' | 'player2';
+  step?: number; // 步骤编号（用于分步执行）
   from?: Position;
   to: Position;
   buildAt?: Position;
@@ -10,6 +11,9 @@ export interface GameMove {
     workerIndex?: number;
     buildType?: 'block' | 'dome';
     isOptional?: boolean;
+    description?: string;
+    specialAbility?: string;
+    [key: string]: any; // 允许其他自定义属性
   };
 }
 

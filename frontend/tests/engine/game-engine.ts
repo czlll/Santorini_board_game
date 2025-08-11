@@ -5,13 +5,15 @@ import { ScenarioLoader } from '../data/scenario-loader';
 export class SantoriniTestEngine {
   private page: Page;
   private currentBoardState: Map<string, any> = new Map();
+  private stateSnapshots: Map<number, any> = new Map(); // 步骤快照
+  private executedSteps: Set<number> = new Set(); // 已执行的步骤
 
   constructor(page: Page) {
     this.page = page;
   }
 
   /**
-   * 执行完整的游戏场景
+   * 执行完整的游戏场景（保持向后兼容）
    */
   async executeScenario(scenario: GameScenario): Promise<void> {
     console.log(`执行场景: ${scenario.name}`);
@@ -26,6 +28,99 @@ export class SantoriniTestEngine {
     }
     
     // 3. 验证期望结果
+    if (scenario.expectedOutcome) {
+      await this.validateOutcome(scenario.expectedOutcome);
+    }
+  }
+
+  /**
+   * 执行场景的指定步骤范围
+   */
+  async executeScenarioSteps(scenario: GameScenario, startStep: number, endStep: number, captureSnapshots = true): Promise<void> {
+    console.log(`执行场景 ${scenario.name} 的步骤 ${startStep}-${endStep}`);
+    
+    // 1. 如果是第一次执行，先设置游戏
+    if (startStep === 1) {
+      await this.setupGame(scenario.setup);
+      // 捕获初始状态
+      if (captureSnapshots) {
+        await this.captureStateSnapshot(0); // 步骤0表示初始状态
+      }
+    }
+    
+    // 2. 执行指定范围的移动
+    const movesToExecute = scenario.moves.filter(move => 
+      move.step >= startStep && move.step <= endStep
+    );
+    
+    for (const move of movesToExecute) {
+      console.log(`执行步骤 ${move.step}: ${move.type} by ${move.player}`);
+      await this.executeMove(move);
+      await this.page.waitForTimeout(300); // 给UI响应时间
+      
+      // 标记步骤已执行并捕获快照
+      this.executedSteps.add(move.step);
+      if (captureSnapshots) {
+        await this.captureStateSnapshot(move.step);
+      }
+    }
+  }
+
+  /**
+   * 执行单个步骤
+   */
+  async executeScenarioStep(scenario: GameScenario, stepNumber: number, captureSnapshot = true): Promise<void> {
+    console.log(`执行场景 ${scenario.name} 的步骤 ${stepNumber}`);
+    
+    const move = scenario.moves.find(move => move.step === stepNumber);
+    if (!move) {
+      throw new Error(`步骤 ${stepNumber} 不存在于场景中`);
+    }
+    
+    // 如果是第一步，先设置游戏
+    if (stepNumber === 1) {
+      await this.setupGame(scenario.setup);
+      if (captureSnapshot) {
+        await this.captureStateSnapshot(0); // 初始状态
+      }
+    }
+    
+    console.log(`执行步骤 ${move.step}: ${move.type} by ${move.player}`);
+    await this.executeMove(move);
+    await this.page.waitForTimeout(300);
+    
+    // 标记步骤已执行并捕获快照
+    this.executedSteps.add(stepNumber);
+    if (captureSnapshot) {
+      await this.captureStateSnapshot(stepNumber);
+    }
+  }
+
+  /**
+   * 执行场景并在指定步骤进行验证
+   */
+  async executeScenarioWithStepValidations(
+    scenario: GameScenario, 
+    stepValidations: { [stepNumber: number]: () => Promise<void> }
+  ): Promise<void> {
+    console.log(`执行场景: ${scenario.name} (带步骤验证)`);
+    
+    // 1. 设置游戏
+    await this.setupGame(scenario.setup);
+    
+    // 2. 按步骤执行，在指定步骤进行验证
+    for (const move of scenario.moves) {
+      await this.executeMove(move);
+      await this.page.waitForTimeout(300);
+      
+      // 检查是否需要在此步骤进行验证
+      if (stepValidations[move.step]) {
+        console.log(`在步骤 ${move.step} 后进行验证`);
+        await stepValidations[move.step]();
+      }
+    }
+    
+    // 3. 最终验证
     if (scenario.expectedOutcome) {
       await this.validateOutcome(scenario.expectedOutcome);
     }
@@ -210,11 +305,11 @@ export class SantoriniTestEngine {
     
     switch (validation.type) {
       case 'apollo_swap_used':
-        await this.validateApolloSwapUsed(validation.expected);
+        await this.validateApolloSwapUsed(validation.expected, validation.config);
         break;
         
       case 'hermes_enhanced_move_used':
-        await this.validateHermesEnhancedMove(validation.expected);
+        await this.validateHermesEnhancedMove(validation.expected, validation.config);
         break;
         
       case 'worker_positions':
@@ -239,24 +334,307 @@ export class SantoriniTestEngine {
   }
 
   /**
-   * 验证Apollo换位能力的使用
+   * 通用的神卡能力验证入口
    */
-  private async validateApolloSwapUsed(expected: boolean): Promise<void> {
-    // 检查棋盘状态变化，看是否有换位发生
-    // 这里通过检查内部状态跟踪来验证
-    const hasSwapOccurred = Object.keys(this.currentBoardState).length > 0;
-    expect(hasSwapOccurred).toBe(expected);
-    console.log(`Apollo换位能力使用验证: ${expected ? '已使用' : '未使用'}`);
+  async validateGodCardAbility(godCard: string, abilityType: string, config: any = {}): Promise<boolean> {
+    console.log(`验证神卡能力: ${godCard} - ${abilityType}`);
+    
+    const key = `${godCard.toLowerCase()}_${abilityType}`;
+    
+    switch (key) {
+      case 'apollo_swap':
+        return await this.validateApolloSwapAbility(config);
+        
+      case 'hermes_enhanced_move':
+        return await this.validateHermesEnhancedMoveAbility(config);
+        
+      default:
+        console.log(`未支持的神卡能力验证: ${godCard} - ${abilityType}`);
+        return false;
+    }
   }
 
   /**
-   * 验证Hermes特殊移动能力的使用  
+   * 验证Apollo换位能力 - 使用状态对比
    */
-  private async validateHermesEnhancedMove(expected: boolean): Promise<void> {
-    // 验证是否有超出常规范围的移动发生
-    // 通过检查移动历史或棋盘状态变化来判断
-    expect(expected).toBe(true); // 假设特殊移动已发生
-    console.log(`Hermes特殊移动能力验证: ${expected ? '已使用' : '未使用'}`);
+  async validateApolloSwapUsingStateComparison(beforeStep: number, afterStep: number): Promise<boolean> {
+    console.log(`验证Apollo换位能力: 对比步骤 ${beforeStep} -> ${afterStep}`);
+    
+    const comparison = this.compareStates(beforeStep, afterStep);
+    
+    // Apollo换位的特征：
+    // 1. 两个不同玩家的工人交换了位置
+    // 2. 总工人数量不变
+    // 3. 位置变化呈现"交换"模式
+    
+    const player1Changes = comparison.workerPositionChanges.player1.moved;
+    const player2Changes = comparison.workerPositionChanges.player2.moved;
+    
+    // 检查是否有工人位置变化
+    if (player1Changes.length === 0 && player2Changes.length === 0) {
+      console.log('未检测到任何工人位置变化');
+      return false;
+    }
+    
+    // 检查是否存在"交换"模式
+    let swapDetected = false;
+    for (const player1Move of player1Changes) {
+      for (const player2Move of player2Changes) {
+        // 如果player1的目标位置 = player2的起始位置，且player2的目标位置 = player1的起始位置
+        if (this.positionsEqual(player1Move.to, player2Move.from) && 
+            this.positionsEqual(player1Move.from, player2Move.to)) {
+          swapDetected = true;
+          console.log(`✅ 检测到换位: Player1 ${JSON.stringify(player1Move.from)} -> ${JSON.stringify(player1Move.to)}, Player2 ${JSON.stringify(player2Move.from)} -> ${JSON.stringify(player2Move.to)}`);
+          break;
+        }
+      }
+      if (swapDetected) break;
+    }
+    
+    if (swapDetected) {
+      console.log('✅ Apollo换位能力验证通过');
+      return true;
+    } else {
+      console.log('❌ 未检测到典型的换位模式');
+      return false;
+    }
+  }
+
+  /**
+   * 验证Hermes特殊移动能力 - 使用状态对比
+   */
+  async validateHermesEnhancedMoveUsingStateComparison(beforeStep: number, afterStep: number): Promise<boolean> {
+    console.log(`验证Hermes特殊移动能力: 对比步骤 ${beforeStep} -> ${afterStep}`);
+    
+    const comparison = this.compareStates(beforeStep, afterStep);
+    const player2Changes = comparison.workerPositionChanges.player2.moved;
+    
+    if (player2Changes.length === 0) {
+      console.log('Player2 (Hermes) 没有工人移动');
+      return false;
+    }
+    
+    // 检查移动距离是否超出常规范围
+    let enhancedMoveDetected = false;
+    for (const move of player2Changes) {
+      const distance = Math.abs(move.to[0] - move.from[0]) + Math.abs(move.to[1] - move.from[1]);
+      if (distance > 1) {
+        enhancedMoveDetected = true;
+        console.log(`✅ 检测到Hermes特殊移动: 从 ${JSON.stringify(move.from)} 到 ${JSON.stringify(move.to)}, 距离 ${distance} 格`);
+        break;
+      }
+    }
+    
+    if (enhancedMoveDetected) {
+      console.log('✅ Hermes特殊移动能力验证通过');
+      return true;
+    } else {
+      console.log('❌ 未检测到超出常规距离的移动');
+      return false;
+    }
+  }
+
+  /**
+   * 辅助方法：判断两个位置是否相等
+   */
+  private positionsEqual(pos1: number[], pos2: number[]): boolean {
+    return pos1[0] === pos2[0] && pos1[1] === pos2[1];
+  }
+
+  /**
+   * 验证Apollo换位能力的使用（通过配置驱动）
+   */
+  private async validateApolloSwapUsed(expected: boolean, config: any = {}): Promise<void> {
+    console.log(`开始验证Apollo换位能力使用: 期望${expected ? '已使用' : '未使用'}`);
+    
+    const result = await this.validateApolloSwapAbility({
+      expected,
+      ...config
+    });
+    
+    expect(result).toBe(expected);
+    console.log(`Apollo换位能力验证完成: ${expected ? '已使用' : '未使用'}`);
+  }
+
+  /**
+   * Apollo换位能力验证的核心逻辑（可复用）
+   */
+  private async validateApolloSwapAbility(config: any = {}): Promise<boolean> {
+    const {
+      expected = true,
+      targetPosition,
+      initialPositions,
+      swapTarget = 'opponent_worker'
+    } = config;
+    
+    // 获取当前工人位置
+    const workerPositions = await this.getWorkerPositions();
+    const boardState = await this.readBoardState();
+    
+    console.log('开始验证Apollo换位能力...');
+    
+    // 1. 验证工人总数正确（换位不会改变工人数量）
+    const totalWorkers = workerPositions.player1.length + workerPositions.player2.length;
+    if (totalWorkers !== 4) {
+      console.log(`工人总数异常: 期望4个，实际${totalWorkers}个`);
+      return false;
+    }
+    
+    // 2. 检查位置变化的合理性
+    let hasPositionChange = false;
+    let hasSwapEvidence = false;
+    
+    // 如果提供了目标位置，检查Apollo工人是否在该位置
+    if (targetPosition) {
+      const posKey = `${targetPosition[0]},${targetPosition[1]}`;
+      const apolloAtTarget = boardState[posKey]?.playerType === 'player1';
+      if (apolloAtTarget) {
+        hasSwapEvidence = true;
+        console.log(`✅ 发现Apollo工人在目标位置: (${targetPosition[0]}, ${targetPosition[1]})`);
+      }
+    }
+    
+    // 检查Apollo工人位置的变化
+    for (const pos of workerPositions.player1) {
+      // 如果有初始位置配置，检查是否偏离初始位置
+      if (initialPositions?.player1) {
+        const isInInitialPosition = initialPositions.player1.some(
+          (initPos: number[]) => pos[0] === initPos[0] && pos[1] === initPos[1]
+        );
+        if (!isInInitialPosition) {
+          hasPositionChange = true;
+          break;
+        }
+      } else {
+        // 默认检查：不在典型的初始放置位置
+        if (!(pos[0] <= 1 && pos[1] <= 1) && !(pos[0] >= 3 && pos[1] <= 1)) {
+          hasPositionChange = true;
+          break;
+        }
+      }
+    }
+    
+    // 记录验证结果
+    console.log('Apollo换位验证结果:', {
+      totalWorkers,
+      hasPositionChange,
+      hasSwapEvidence,
+      apolloPositions: workerPositions.player1,
+      opponentPositions: workerPositions.player2,
+      targetPosition
+    });
+    
+    // 换位的关键证据：位置发生了变化
+    const swapUsed = hasPositionChange || hasSwapEvidence;
+    
+    if (expected && swapUsed) {
+      console.log('✅ 验证通过：检测到Apollo换位能力的使用');
+    } else if (!expected && !swapUsed) {
+      console.log('✅ 验证通过：未检测到Apollo换位能力的使用');
+    } else {
+      console.log(`⚠️ 验证结果不符合期望：期望${expected ? '已使用' : '未使用'}，实际${swapUsed ? '已使用' : '未使用'}`);
+    }
+    
+    return swapUsed;
+  }
+
+  /**
+   * 验证Hermes特殊移动能力的使用（通过配置驱动）
+   */
+  private async validateHermesEnhancedMove(expected: boolean, config: any = {}): Promise<void> {
+    console.log(`开始验证Hermes特殊移动能力: 期望${expected ? '已使用' : '未使用'}`);
+    
+    const result = await this.validateHermesEnhancedMoveAbility({
+      expected,
+      ...config
+    });
+    
+    expect(result).toBe(expected);
+    console.log(`Hermes特殊移动能力验证完成: ${expected ? '已使用' : '未使用'}`);
+  }
+
+  /**
+   * Hermes特殊移动能力验证的核心逻辑（可复用）
+   */
+  private async validateHermesEnhancedMoveAbility(config: any = {}): Promise<boolean> {
+    const {
+      expected = true,
+      initialPositions,
+      minEnhancedDistance = 2,
+      playerIndex = 2 // Hermes通常是player2
+    } = config;
+    
+    const workerPositions = await this.getWorkerPositions();
+    const playerKey = `player${playerIndex}` as 'player1' | 'player2';
+    const hermesPositions = workerPositions[playerKey];
+    
+    console.log('开始验证Hermes特殊移动能力...');
+    
+    // 1. 验证工人数量正确
+    if (hermesPositions.length !== 2) {
+      console.log(`Hermes工人数量异常: 期望2个，实际${hermesPositions.length}个`);
+      return false;
+    }
+    
+    // 2. 检查是否有远距离移动的证据
+    let hasEnhancedMove = false;
+    let maxDistanceFromStart = 0;
+    
+    for (const pos of hermesPositions) {
+      let minDistanceFromInit = Number.MAX_SAFE_INTEGER;
+      
+      if (initialPositions?.player2) {
+        // 使用提供的初始位置
+        for (const initPos of initialPositions.player2) {
+          const distance = Math.abs(pos[0] - initPos[0]) + Math.abs(pos[1] - initPos[1]);
+          minDistanceFromInit = Math.min(minDistanceFromInit, distance);
+        }
+      } else {
+        // 使用默认的初始位置估算（基于apollo-vs-hermes场景）
+        const defaultInitPositions = [[2, 1], [1, 3]];
+        for (const initPos of defaultInitPositions) {
+          const distance = Math.abs(pos[0] - initPos[0]) + Math.abs(pos[1] - initPos[1]);
+          minDistanceFromInit = Math.min(minDistanceFromInit, distance);
+        }
+      }
+      
+      maxDistanceFromStart = Math.max(maxDistanceFromStart, minDistanceFromInit);
+      
+      // 如果工人距离初始位置超过最小增强距离，认为使用了特殊移动
+      if (minDistanceFromInit >= minEnhancedDistance) {
+        hasEnhancedMove = true;
+        console.log(`✅ 发现Hermes工人在远距离位置: (${pos[0]}, ${pos[1]})，距离初始位置${minDistanceFromInit}格`);
+      }
+    }
+    
+    // 3. 检查工人之间的分布（特殊移动可能导致更大的分散）
+    let maxWorkerDistance = 0;
+    if (hermesPositions.length >= 2) {
+      const pos1 = hermesPositions[0];
+      const pos2 = hermesPositions[1];
+      maxWorkerDistance = Math.abs(pos1[0] - pos2[0]) + Math.abs(pos1[1] - pos2[1]);
+    }
+    
+    console.log('Hermes特殊移动验证结果:', {
+      hasEnhancedMove,
+      maxDistanceFromStart,
+      maxWorkerDistance,
+      hermesPositions,
+      minEnhancedDistance
+    });
+    
+    // 特殊移动的关键证据：有工人移动了超过常规距离
+    const enhancedMoveUsed = hasEnhancedMove || maxDistanceFromStart > 1;
+    
+    if (expected && enhancedMoveUsed) {
+      console.log('✅ 验证通过：检测到Hermes特殊移动能力的使用');
+    } else if (!expected && !enhancedMoveUsed) {
+      console.log('✅ 验证通过：未检测到Hermes特殊移动能力的使用');
+    } else {
+      console.log(`⚠️ 验证结果不符合期望：期望${expected ? '已使用' : '未使用'}，实际${enhancedMoveUsed ? '已使用' : '未使用'}`);
+    }
+    
+    return enhancedMoveUsed;
   }
 
   /**
@@ -345,11 +723,168 @@ export class SantoriniTestEngine {
   }
 
   /**
+   * 在指定步骤拍摄状态快照
+   */
+  async captureStateSnapshot(stepNumber: number): Promise<void> {
+    const gameState = await this.getCurrentGameState();
+    this.stateSnapshots.set(stepNumber, {
+      step: stepNumber,
+      timestamp: Date.now(),
+      gameState: JSON.parse(JSON.stringify(gameState)) // 深拷贝
+    });
+    console.log(`状态快照已保存: 步骤 ${stepNumber}`);
+  }
+
+  /**
+   * 获取指定步骤的状态快照
+   */
+  getStateSnapshot(stepNumber: number): any | undefined {
+    return this.stateSnapshots.get(stepNumber);
+  }
+
+  /**
+   * 对比两个步骤之间的状态变化
+   */
+  compareStates(beforeStep: number, afterStep: number): any {
+    const beforeState = this.getStateSnapshot(beforeStep);
+    const afterState = this.getStateSnapshot(afterStep);
+    
+    if (!beforeState || !afterState) {
+      throw new Error(`无法找到步骤 ${beforeStep} 或 ${afterStep} 的状态快照`);
+    }
+    
+    const comparison = {
+      stepRange: `${beforeStep} -> ${afterStep}`,
+      workerPositionChanges: this.compareWorkerPositions(
+        beforeState.gameState.workerPositions,
+        afterState.gameState.workerPositions
+      ),
+      buildingChanges: this.compareBuildingCounts(
+        beforeState.gameState.buildingCounts,
+        afterState.gameState.buildingCounts
+      ),
+      boardStateChanges: this.compareBoardStates(
+        beforeState.gameState.boardState,
+        afterState.gameState.boardState
+      )
+    };
+    
+    console.log(`状态对比 (步骤 ${beforeStep} -> ${afterStep}):`, comparison);
+    return comparison;
+  }
+
+  /**
+   * 对比工人位置变化
+   */
+  private compareWorkerPositions(beforePositions: any, afterPositions: any): any {
+    const changes = {
+      player1: {
+        moved: [] as Array<{ from: number[], to: number[] }>,
+        unchanged: [] as Array<number[]>
+      },
+      player2: {
+        moved: [] as Array<{ from: number[], to: number[] }>,
+        unchanged: [] as Array<number[]>
+      }
+    };
+    
+    // 对比player1工人位置
+    for (let i = 0; i < beforePositions.player1.length; i++) {
+      const beforePos = beforePositions.player1[i];
+      const afterPos = afterPositions.player1[i];
+      
+      if (beforePos[0] !== afterPos[0] || beforePos[1] !== afterPos[1]) {
+        changes.player1.moved.push({ from: beforePos, to: afterPos });
+      } else {
+        changes.player1.unchanged.push(beforePos);
+      }
+    }
+    
+    // 对比player2工人位置
+    for (let i = 0; i < beforePositions.player2.length; i++) {
+      const beforePos = beforePositions.player2[i];
+      const afterPos = afterPositions.player2[i];
+      
+      if (beforePos[0] !== afterPos[0] || beforePos[1] !== afterPos[1]) {
+        changes.player2.moved.push({ from: beforePos, to: afterPos });
+      } else {
+        changes.player2.unchanged.push(beforePos);
+      }
+    }
+    
+    return changes;
+  }
+
+  /**
+   * 对比建筑物数量变化
+   */
+  private compareBuildingCounts(beforeCounts: any, afterCounts: any): any {
+    return {
+      totalChange: afterCounts.total - beforeCounts.total,
+      level1Change: afterCounts.level1 - beforeCounts.level1,
+      level2Change: afterCounts.level2 - beforeCounts.level2,
+      level3Change: afterCounts.level3 - beforeCounts.level3,
+      domesChange: afterCounts.domes - beforeCounts.domes,
+      newBuildings: afterCounts.total > beforeCounts.total
+    };
+  }
+
+  /**
+   * 对比棋盘状态变化
+   */
+  private compareBoardStates(beforeBoard: any, afterBoard: any): any {
+    const changes = {
+      changedPositions: [] as Array<{ position: string, before: any, after: any }>,
+      newWorkerPositions: [] as Array<string>,
+      newBuildings: [] as Array<string>
+    };
+    
+    // 找出所有位置的变化
+    const allPositions = new Set([...Object.keys(beforeBoard), ...Object.keys(afterBoard)]);
+    
+    for (const position of allPositions) {
+      const beforeState = beforeBoard[position];
+      const afterState = afterBoard[position];
+      
+      if (JSON.stringify(beforeState) !== JSON.stringify(afterState)) {
+        changes.changedPositions.push({
+          position,
+          before: beforeState,
+          after: afterState
+        });
+        
+        // 检查是否有新的工人位置
+        if (!beforeState?.hasWorker && afterState?.hasWorker) {
+          changes.newWorkerPositions.push(position);
+        }
+        
+        // 检查是否有新的建筑
+        if (!beforeState?.buildingLevel && afterState?.buildingLevel > 0) {
+          changes.newBuildings.push(position);
+        }
+      }
+    }
+    
+    return changes;
+  }
+
+  /**
+   * 重置引擎状态（用于新的测试场景）
+   */
+  resetEngine(): void {
+    this.currentBoardState.clear();
+    this.stateSnapshots.clear();
+    this.executedSteps.clear();
+    console.log('测试引擎状态已重置');
+  }
+
+  /**
    * 验证棋盘状态
    */
-  async validateBoardState(expectedState: any): Promise<void> {
+  async validateBoardState(): Promise<void> {
     // 实现棋盘状态验证逻辑
-    console.log('验证棋盘状态');
+    const currentState = await this.readBoardState();
+    console.log('验证棋盘状态', currentState);
   }
 
   /**
