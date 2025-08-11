@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { PageObjectManager } from '../pages/game-pages';
+import { PageObjectManager } from '../tests/pages/game-pages';
 
 test.describe('UI Components - Decoupled Tests', () => {
   let pageManager: PageObjectManager;

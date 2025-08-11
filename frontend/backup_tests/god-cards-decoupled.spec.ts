@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { SantoriniTestEngine } from '../engine/game-engine';
-import { PageObjectManager } from '../pages/game-pages';
-import { GameScenario } from '../data/game-notation';
+import { SantoriniTestEngine } from '../tests/engine/game-engine';
+import { PageObjectManager } from '../tests/pages/game-pages';
+import { GameScenario } from '../tests/data/game-notation';
 
 test.describe('God Cards Functionality - Decoupled Tests', () => {
   let engine: SantoriniTestEngine;
