@@ -1,0 +1,345 @@
+# Pan特殊胜利条件测试场景
+# 测试Pan神卡通过下降两层或更多获胜的特殊胜利条件
+
+id: pan_special_victory
+name: Pan特殊胜利条件测试
+description: |
+  测试Pan神卡的特殊胜利条件：当Pan的工人从高层建筑下降两层或更多时即可获胜，
+  而不需要到达第三层。这个场景将构建必要的建筑高度来触发Pan的胜利条件。
+version: "1.0"
+tags:
+  - pan
+  - victory-condition
+  - special-win
+  - god-card
+  - advanced
+  - height-advantage
+
+setup:
+  players:
+    player1:
+      name: Pan_Alice
+      godCard: Pan
+    player2:
+      name: Normal_Bob
+      godCard: Demeter  # 使用已实现的Demeter作为对手
+  boardSize:
+    width: 5
+    height: 5
+
+# 这个场景需要先建造足够高的建筑，然后让Pan工人从高处下降
+moves:
+  # === 工人放置阶段 ===
+  - step: 1
+    type: place_worker
+    player: player1
+    to: {x: 2, y: 2}  # Pan工人在中心
+    metadata:
+      workerIndex: 0
+      description: "Pan Alice在中心放置工人，准备建造高塔"
+      
+  - step: 2
+    type: place_worker
+    player: player1
+    to: {x: 1, y: 1}  # Pan第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Pan Alice放置第二个工人"
+      
+  - step: 3
+    type: place_worker
+    player: player2
+    to: {x: 4, y: 4}  # Demeter远离Pan
+    metadata:
+      workerIndex: 0
+      description: "Demeter Bob远离Pan，避免干扰"
+      
+  - step: 4
+    type: place_worker
+    player: player2
+    to: {x: 0, y: 4}  # Demeter第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Demeter Bob放置第二个工人"
+
+  # === 建造高塔阶段 ===
+  # 目标：在 (2,3) 位置建造一个3层高塔，在 (2,1) 建造1层，让Pan能从3层下降到1层
+  
+  # 第1轮：开始建造
+  - step: 5
+    type: move
+    player: player1
+    from: {x: 2, y: 2}
+    to: {x: 2, y: 3}   # Pan移动到建造位置
+    metadata:
+      description: "Pan移动到建造高塔的位置"
+      
+  - step: 6
+    type: build
+    player: player1
+    to: {x: 2, y: 2}   # 在原位置建造第1层
+    metadata:
+      buildType: block
+      level: 1
+      description: "Pan建造第1层方块"
+
+  - step: 7
+    type: move
+    player: player2
+    from: {x: 4, y: 4}
+    to: {x: 3, y: 4}   # Demeter移动
+    metadata:
+      description: "Demeter移动"
+      
+  - step: 8
+    type: build
+    player: player2
+    to: {x: 3, y: 3}   # Demeter建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter建造"
+
+  # 第2轮：继续建造高塔
+  - step: 9
+    type: move
+    player: player1
+    from: {x: 2, y: 3}
+    to: {x: 1, y: 3}   # Pan移动
+    metadata:
+      description: "Pan移动到更好的建造位置"
+      
+  - step: 10
+    type: build
+    player: player1
+    to: {x: 2, y: 2}   # 继续在同一位置建造第2层
+    metadata:
+      buildType: block
+      level: 2
+      description: "Pan建造第2层方块"
+
+  - step: 11
+    type: move
+    player: player2
+    from: {x: 3, y: 4}
+    to: {x: 2, y: 4}   # Demeter移动
+    metadata:
+      description: "Demeter移动"
+      
+  - step: 12
+    type: build
+    player: player2
+    to: {x: 1, y: 4}   # Demeter建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter建造"
+      
+  - step: 13  # Demeter的第二次建造（使用Demeter能力）
+    type: build
+    player: player2
+    to: {x: 0, y: 3}   # Demeter额外建造
+    metadata:
+      buildType: block
+      level: 1
+      isOptional: true
+      specialAbility: demeter_double_build
+      description: "Demeter使用双重建造能力"
+
+  # 第3轮：完成高塔建造
+  - step: 14
+    type: move
+    player: player1
+    from: {x: 1, y: 3}
+    to: {x: 1, y: 2}   # Pan移动
+    metadata:
+      description: "Pan移动到建造第3层的位置"
+      
+  - step: 15
+    type: build
+    player: player1
+    to: {x: 2, y: 2}   # 建造第3层
+    metadata:
+      buildType: block
+      level: 3
+      description: "Pan建造第3层方块，形成3层高塔"
+
+  - step: 16
+    type: move
+    player: player2
+    from: {x: 0, y: 4}
+    to: {x: 0, y: 3}   # Demeter移动到自己建造的方块上
+    metadata:
+      description: "Demeter移动"
+      
+  - step: 17
+    type: build
+    player: player2
+    to: {x: 0, y: 2}   # Demeter建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter建造"
+
+  # 第4轮：准备Pan的特殊胜利
+  # 先在 (2,1) 建造1层，然后让Pan工人上到3层高塔，再下降到1层
+  - step: 18
+    type: move
+    player: player1
+    from: {x: 1, y: 1}
+    to: {x: 2, y: 1}   # Pan第二个工人移动
+    metadata:
+      description: "Pan第二个工人移动到建造位置"
+      
+  - step: 19
+    type: build
+    player: player1
+    to: {x: 3, y: 1}   # 建造1层作为下降目标
+    metadata:
+      buildType: block
+      level: 1
+      description: "Pan建造1层方块作为下降目标"
+
+  - step: 20
+    type: move
+    player: player2
+    from: {x: 2, y: 4}
+    to: {x: 1, y: 4}   # Demeter移动
+    metadata:
+      description: "Demeter移动"
+      
+  - step: 21
+    type: build
+    player: player2
+    to: {x: 2, y: 4}   # Demeter建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter建造"
+
+  # 第5轮：Pan登上高塔
+  - step: 22
+    type: move
+    player: player1
+    from: {x: 1, y: 2}
+    to: {x: 2, y: 2}   # Pan工人爬上3层高塔
+    metadata:
+      description: "Pan工人爬上3层高塔，准备下降获胜"
+      currentHeight: 3
+      
+  - step: 23
+    type: build
+    player: player1
+    to: {x: 3, y: 2}   # 建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Pan建造"
+
+  # 最关键的一步：Pan从3层下降到1层，触发特殊胜利条件
+  - step: 24
+    type: special_action
+    player: player1
+    from: {x: 2, y: 2}  # 从3层高塔
+    to: {x: 3, y: 1}    # 下降到1层方块
+    metadata:
+      description: "Pan从3层高塔下降到1层，下降2层触发特殊胜利条件！"
+      specialAbility: pan_victory_descent
+      fromHeight: 3
+      toHeight: 1
+      descentAmount: 2
+      triggerVictory: true
+
+# 预期结果：Pan获胜
+expectedOutcome:
+  gameState: ended
+  winner: player1
+  winCondition: pan_special_descent
+  finalBoardState:
+    # 最终工人位置
+    "3,1":
+      worker: {player: player1, index: 0}  # Pan获胜工人的最终位置
+      height: 1
+    "2,1":
+      worker: {player: player1, index: 1}
+    
+    # 关键建筑
+    "2,2":
+      level: 3  # 3层高塔
+    "3,1":
+      level: 1  # Pan下降到的位置
+      
+  validations:
+    - type: pan_victory_triggered
+      expected: true
+      description: "Pan通过下降2层触发特殊胜利条件"
+    - type: descent_calculation
+      expected: {from: 3, to: 1, amount: 2}
+    - type: winner_verification
+      expected: player1
+    - type: win_condition_type
+      expected: "pan_special_descent"
+
+# 关键测试点
+testingFocus:
+  panAbility:
+    description: "Pan可以通过下降两层或更多获胜"
+    keyValidations:
+      - "正确识别工人从高塔下降"
+      - "准确计算下降层数"
+      - "在下降≥2层时触发胜利"
+      - "胜利优先于常规移动后的建造"
+    edgeCases:
+      - "下降1层不应触发胜利"
+      - "上升移动不应触发胜利"
+      - "平移移动不应触发胜利"
+
+# 场景变体
+variants:
+  - name: minimal_descent
+    description: "测试恰好下降2层的最小胜利条件"
+    modifyMoves:
+      # 调整为从2层下降到0层（地面）
+      
+  - name: maximum_descent
+    description: "测试从最高建筑（3层）下降到地面"
+    modifyMoves:
+      # 从3层直接下降到地面（下降3层）
+      
+  - name: blocked_descent
+    description: "测试下降路径被阻挡的情况"
+    modifySetup:
+      boardState:
+        "3,1": {level: 4}  # 目标位置有圆顶
+        
+  - name: regular_win_vs_pan_win
+    description: "测试Pan的常规胜利vs特殊胜利条件"
+    additionalValidations:
+      - "Pan仍然可以通过常规方式（到达3层）获胜"
+
+# 元数据
+metadata:
+  author: Test Development Team
+  created: "2024-01-20"
+  difficulty: expert
+  estimatedDuration: 90s
+  complexity: very_high
+  relatedScenarios:
+    - pan_basic_move
+    - victory_conditions_test
+    - height_based_gameplay
+  testPurpose: |
+    验证Pan神卡最独特的能力：特殊胜利条件。这需要：
+    1. 正确构建多层建筑
+    2. 准确计算高度差
+    3. 正确触发特殊胜利条件
+    4. 验证胜利条件优先级
+  notes: |
+    这是最复杂的测试场景之一，因为需要：
+    - 精心构建3层建筑
+    - 协调多个工人的移动
+    - 测试特殊胜利逻辑
+    - 验证游戏结束条件
+    
+    Pan的特殊胜利是Santorini中最独特的机制之一，
+    彻底改变了高层建筑的风险/收益权衡。

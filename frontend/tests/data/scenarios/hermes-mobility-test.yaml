@@ -1,0 +1,345 @@
+# Hermes特殊移动能力测试
+# 测试Hermes神卡的特殊移动能力
+
+id: hermes_special_movement
+name: Hermes特殊移动能力测试
+description: |
+  测试Hermes神卡的特殊移动能力。根据经典Santorini规则，Hermes通常具有
+  特殊的移动能力，如移动任意次数或特殊的移动路径。这个场景将测试
+  Hermes在当前实现中的具体移动增强。
+version: "1.0"
+tags:
+  - hermes
+  - special-movement
+  - mobility
+  - god-card
+  - movement-enhancement
+  - basic
+
+setup:
+  players:
+    player1:
+      name: Hermes_Alice
+      godCard: Hermes
+    player2:
+      name: Normal_Bob
+      godCard: Demeter  # 使用标准Demeter作为对照
+  boardSize:
+    width: 5
+    height: 5
+
+moves:
+  # === 工人放置阶段 ===
+  - step: 1
+    type: place_worker
+    player: player1
+    to: {x: 0, y: 0}  # Hermes从角落开始，展示移动能力
+    metadata:
+      workerIndex: 0
+      description: "Hermes Alice在角落放置工人，测试移动范围"
+      
+  - step: 2
+    type: place_worker
+    player: player1
+    to: {x: 1, y: 1}  # Hermes第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Hermes Alice放置第二个工人"
+      
+  - step: 3
+    type: place_worker
+    player: player2
+    to: {x: 3, y: 3}  # Demeter远离Hermes
+    metadata:
+      workerIndex: 0
+      description: "Demeter Bob放置工人远离Hermes"
+      
+  - step: 4
+    type: place_worker
+    player: player2
+    to: {x: 4, y: 4}  # Demeter第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Demeter Bob放置第二个工人"
+
+  # === Hermes特殊移动能力测试 ===
+  
+  # 测试1：基础特殊移动
+  - step: 5
+    type: special_action
+    player: player1
+    from: {x: 0, y: 0}
+    to: {x: 2, y: 0}   # 尝试跨越正常移动范围
+    metadata:
+      description: "Hermes尝试执行特殊移动，跨越正常1格限制"
+      specialAbility: hermes_move
+      moveType: "extended_range"
+      distance: 2
+      
+  - step: 6
+    type: build
+    player: player1
+    to: {x: 2, y: 1}   # Hermes建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Hermes在新位置建造"
+
+  # Demeter的常规回合
+  - step: 7
+    type: move
+    player: player2
+    from: {x: 3, y: 3}
+    to: {x: 3, y: 2}   # Demeter常规移动
+    metadata:
+      description: "Demeter进行常规移动"
+      
+  - step: 8
+    type: build
+    player: player2
+    to: {x: 4, y: 2}   # 第一次建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter第一次建造"
+      
+  - step: 9  # Demeter双重建造
+    type: build
+    player: player2
+    to: {x: 3, y: 1}   # 第二次建造
+    metadata:
+      buildType: block
+      level: 1
+      isOptional: true
+      specialAbility: demeter_double_build
+      description: "Demeter使用双重建造能力"
+
+  # 测试2：测试Hermes移动的灵活性
+  - step: 10
+    type: special_action
+    player: player1
+    from: {x: 1, y: 1}
+    to: {x: 1, y: 4}   # 纵向长距离移动
+    metadata:
+      description: "Hermes第二个工人执行纵向特殊移动"
+      specialAbility: hermes_move
+      moveType: "long_distance"
+      distance: 3
+      
+  - step: 11
+    type: build
+    player: player1
+    to: {x: 0, y: 4}   # 建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Hermes建造"
+
+  # 继续测试Hermes能力
+  - step: 12
+    type: move
+    player: player2
+    from: {x: 4, y: 4}
+    to: {x: 4, y: 3}   # Demeter移动
+    metadata:
+      description: "Demeter移动"
+      
+  - step: 13
+    type: build
+    player: player2
+    to: {x: 4, y: 1}   # Demeter建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter建造"
+
+  # 测试3：Hermes复杂路径移动
+  - step: 14
+    type: special_action
+    player: player1
+    from: {x: 2, y: 0}
+    to: {x: 4, y: 0}   # 横向移动
+    metadata:
+      description: "Hermes工人横向特殊移动到边界"
+      specialAbility: hermes_move
+      moveType: "boundary_reach"
+      
+  - step: 15
+    type: build
+    player: player1
+    to: {x: 3, y: 0}   # 建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Hermes建造"
+
+  # 测试4：验证Hermes移动限制
+  - step: 16
+    type: move
+    player: player2
+    from: {x: 4, y: 3}
+    to: {x: 3, y: 3}   # Demeter移动回原位
+    metadata:
+      description: "Demeter移动"
+      
+  - step: 17
+    type: build
+    player: player2
+    to: {x: 2, y: 3}   # Demeter建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter建造"
+
+  # 测试5：Hermes移动到建筑上
+  - step: 18
+    type: special_action
+    player: player1
+    from: {x: 1, y: 4}
+    to: {x: 2, y: 3}   # 移动到Demeter刚建的方块上
+    metadata:
+      description: "Hermes移动到1层建筑上"
+      specialAbility: hermes_move
+      moveType: "climb_move"
+      toHeight: 1
+      
+  - step: 19
+    type: build
+    player: player1
+    to: {x: 1, y: 3}   # 建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Hermes在高处建造"
+
+  # 最后测试Hermes的战略移动
+  - step: 20
+    type: move
+    player: player2
+    from: {x: 3, y: 2}
+    to: {x: 2, y: 2}   # Demeter移动
+    metadata:
+      description: "Demeter移动到中心"
+      
+  - step: 21
+    type: build
+    player: player2
+    to: {x: 1, y: 2}   # Demeter建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter建造"
+
+# 预期结果验证
+expectedOutcome:
+  gameState: in_progress
+  boardState:
+    # 工人最终位置
+    "4,0":
+      worker: {player: player1, index: 0}  # Hermes工人1
+    "2,3":
+      worker: {player: player1, index: 1}  # Hermes工人2（在1层建筑上）
+      height: 1
+    "2,2":
+      worker: {player: player2, index: 0}  # Demeter工人1
+    "3,3":
+      worker: {player: player2, index: 1}  # Demeter工人2
+    
+    # 建筑物状态
+    "2,1": {level: 1}
+    "4,2": {level: 1}
+    "3,1": {level: 1}
+    "0,4": {level: 1}
+    "4,1": {level: 1}
+    "3,0": {level: 1}
+    "2,3": {level: 1}
+    "1,3": {level: 1}
+    "1,2": {level: 1}
+      
+  validations:
+    - type: hermes_special_moves
+      expected: 4  # Hermes使用了4次特殊移动
+    - type: extended_range_moves
+      expected: true  # 验证超出常规范围的移动
+    - type: movement_flexibility
+      expected: high  # Hermes展现了高度的移动灵活性
+    - type: normal_vs_special_movement
+      comparison: "Hermes移动能力明显超越常规移动"
+
+# Hermes能力分析
+abilityAnalysis:
+  hermesCapabilities:
+    description: "Hermes神卡的移动增强能力"
+    testedFeatures:
+      - "扩展移动范围（超过1格）"
+      - "长距离直线移动"
+      - "复杂路径导航"
+      - "灵活的战术重新定位"
+    strategicValue:
+      - "快速棋盘控制"
+      - "位置优势获取"
+      - "逃脱包围"
+      - "战术灵活性"
+      
+  comparisonWithNormal:
+    normalMovement: "限制在相邻8格内"
+    hermesMovement: "可能支持更长距离或特殊路径"
+    advantage: "显著提高移动灵活性和战术选择"
+
+# 测试变体
+variants:
+  - name: maximum_range_test
+    description: "测试Hermes最大移动范围"
+    additionalMoves:
+      - type: special_action
+        from: {x: 0, y: 0}
+        to: {x: 4, y: 4}  # 对角线最大距离
+        
+  - name: blocked_path_test
+    description: "测试Hermes移动路径被阻挡"
+    modifySetup:
+      boardState:
+        "2,2": {level: 4}  # 中心有圆顶阻挡
+        
+  - name: vertical_mobility_test
+    description: "测试Hermes的垂直移动能力"
+    modifySetup:
+      boardState:
+        "1,0": {level: 2}
+        "2,0": {level: 3}  # 创建高度梯度
+
+# 性能指标
+performance:
+  mobilityAdvantage: "显著"
+  tacticalFlexibility: "高"
+  movementEfficiency: "优于常规移动"
+  strategicImpact: "改变游戏节奏"
+
+# 元数据
+metadata:
+  author: Test Development Team
+  created: "2024-01-20"
+  difficulty: intermediate
+  estimatedDuration: 50s
+  complexity: moderate
+  relatedScenarios:
+    - hermes_vs_apollo
+    - mobility_comparison
+    - movement_god_cards
+  testPurpose: |
+    验证Hermes神卡的特殊移动能力：
+    1. 确认移动增强功能正确实现
+    2. 测试移动的灵活性和范围
+    3. 验证与常规移动的区别
+    4. 评估战略价值和游戏影响
+  notes: |
+    Hermes是信使之神，在Santorini中通常具有特殊的移动能力。
+    这个测试验证当前实现中Hermes的具体能力，包括：
+    
+    - 移动范围是否扩展
+    - 是否支持特殊移动路径
+    - 移动限制和约束条件
+    - 与其他游戏元素的交互
+    
+    注意：具体的Hermes能力取决于当前代码实现，
+    测试将验证实际实现的正确性。

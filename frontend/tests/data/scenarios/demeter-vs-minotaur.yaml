@@ -1,0 +1,265 @@
+# Demeter vs Minotaur 神卡能力测试场景
+# 测试Demeter的双重建造能力 vs Minotaur的推动能力
+
+id: demeter_vs_minotaur_advanced
+name: Demeter vs Minotaur高级对抗测试
+description: |
+  测试Demeter神卡的双重建造能力与Minotaur神卡的推动能力在复杂场景下的交互，
+  验证两种不同类型的特殊能力如何影响游戏策略
+version: "1.0"
+tags:
+  - demeter
+  - minotaur
+  - double-build
+  - push-move
+  - god-card
+  - advanced
+  - strategy
+
+setup:
+  players:
+    player1:
+      name: Demeter_Alice
+      godCard: Demeter
+    player2:
+      name: Minotaur_Bob
+      godCard: Minotaur
+  boardSize:
+    width: 5
+    height: 5
+
+# 游戏移动序列
+moves:
+  # === 工人放置阶段 ===
+  - step: 1
+    type: place_worker
+    player: player1
+    to: {x: 2, y: 2}  # Demeter在中心位置
+    metadata:
+      workerIndex: 0
+      description: "Demeter Alice在中心放置第一个工人"
+      
+  - step: 2
+    type: place_worker
+    player: player1
+    to: {x: 1, y: 1}  # Demeter第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Demeter Alice放置第二个工人在对角位置"
+      
+  - step: 3
+    type: place_worker
+    player: player2
+    to: {x: 2, y: 3}  # Minotaur靠近Demeter
+    metadata:
+      workerIndex: 0
+      description: "Minotaur Bob放置第一个工人，准备利用推动能力"
+      
+  - step: 4
+    type: place_worker
+    player: player2
+    to: {x: 3, y: 1}  # Minotaur第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Minotaur Bob放置第二个工人在侧翼"
+
+  # === 游戏进行阶段 ===
+  # Demeter的回合 - 展示双重建造能力
+  - step: 5
+    type: move
+    player: player1
+    from: {x: 2, y: 2}
+    to: {x: 2, y: 1}   # 移动到更有利的建造位置
+    metadata:
+      description: "Demeter工人移动到中央上方，准备双重建造"
+      strategy: "为双重建造创造最佳位置"
+      
+  - step: 6
+    type: build
+    player: player1
+    to: {x: 1, y: 0}   # 第一次建造（必须）
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter执行第一次建造（必须的）"
+      
+  - step: 7
+    type: build
+    player: player1
+    to: {x: 3, y: 0}   # 第二次建造（可选）
+    metadata:
+      buildType: block
+      level: 1
+      isOptional: true
+      specialAbility: demeter_double_build
+      description: "Demeter使用特殊能力进行第二次建造"
+      strategy: "利用双重建造封锁对手行动路径"
+
+  # Minotaur的回合 - 展示推动能力
+  - step: 8
+    type: move
+    player: player2
+    from: {x: 2, y: 3}
+    to: {x: 2, y: 2}   # Minotaur移动到中心
+    metadata:
+      description: "Minotaur移动到中心位置，准备推动攻击"
+      
+  - step: 9
+    type: build
+    player: player2
+    to: {x: 1, y: 3}   # Minotaur建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Minotaur建造方块"
+
+  # 下一轮：展示Minotaur推动能力
+  - step: 10
+    type: move
+    player: player1
+    from: {x: 1, y: 1}
+    to: {x: 1, y: 2}   # Demeter工人移动
+    metadata:
+      description: "Demeter另一个工人移动"
+      
+  - step: 11
+    type: build
+    player: player1
+    to: {x: 0, y: 2}   # 单次建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Demeter进行常规建造（不使用双重能力）"
+
+  # Minotaur推动攻击
+  - step: 12
+    type: special_action
+    player: player2
+    from: {x: 2, y: 2}
+    to: {x: 2, y: 1}   # 推动Demeter的工人
+    metadata:
+      description: "Minotaur使用推动能力，将Demeter工人从(2,1)推到(2,0)"
+      specialAbility: minotaur_push
+      targetPlayer: player1
+      pushDirection: "north"
+      
+  - step: 13
+    type: build
+    player: player2
+    to: {x: 3, y: 2}   # Minotaur建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Minotaur完成建造"
+
+# 预期结果验证
+expectedOutcome:
+  gameState: in_progress
+  boardState:
+    # 工人位置
+    "2,0": 
+      worker: {player: player1, index: 0}  # 被Minotaur推动后的位置
+    "1,2":
+      worker: {player: player1, index: 1}
+    "2,1":
+      worker: {player: player2, index: 0}  # Minotaur推动后占据的位置
+    "3,1":
+      worker: {player: player2, index: 1}
+    
+    # 建筑物状态
+    "1,0":
+      level: 1
+      buildHistory: [{player: player1, step: 6}]
+    "3,0":
+      level: 1
+      buildHistory: [{player: player1, step: 7}]
+    "1,3":
+      level: 1
+      buildHistory: [{player: player2, step: 9}]
+    "0,2":
+      level: 1
+      buildHistory: [{player: player1, step: 11}]
+    "3,2":
+      level: 1
+      buildHistory: [{player: player2, step: 13}]
+      
+  validations:
+    - type: worker_positions
+      expected: 
+        player1: [[2,0], [1,2]]
+        player2: [[2,1], [3,1]]
+    - type: building_count
+      expected: {total: 5, by_player1: 3, by_player2: 2}  # Demeter建造3次，Minotaur建造2次
+    - type: demeter_ability_usage
+      expected: 1  # Demeter使用了1次双重建造
+    - type: minotaur_push_usage
+      expected: 1  # Minotaur使用了1次推动
+    - type: no_winner
+      expected: true  # 游戏仍在进行中
+
+# 测试变体
+variants:
+  - name: demeter_skip_optional_build
+    description: "测试Demeter跳过可选第二次建造"
+    modifyMoves:
+      remove: [7]  # 移除第二次建造
+    expectedChanges:
+      building_count: {total: 4, by_player1: 2, by_player2: 2}
+      
+  - name: minotaur_blocked_push
+    description: "测试Minotaur推动被阻挡的情况"
+    modifySetup:
+      boardState:
+        "2,0": {level: 4}  # 目标位置有圆顶，无法推动
+        
+  - name: strategic_interaction
+    description: "测试两种能力的战略互动"
+    additionalMoves:
+      - step: 14
+        type: move
+        player: player1
+        from: {x: 2, y: 0}
+        to: {x: 1, y: 0}  # Demeter工人爬到自己建造的方块上
+        metadata:
+          description: "利用自己的双重建造创造的高度优势"
+
+# 性能和复杂度指标
+complexity:
+  godCardInteractions: 2  # 涉及2种神卡能力
+  specialAbilities: 3     # 1次双重建造 + 1次推动
+  strategicDepth: high    # 需要考虑双方特殊能力的策略
+  estimatedMoves: 13      # 基础场景移动数
+
+# 教学价值
+educational:
+  concepts:
+    - "Demeter双重建造的战略价值"
+    - "Minotaur推动的攻击性运用"
+    - "不同类型神卡能力的平衡"
+    - "特殊能力的时机选择"
+  difficulty: intermediate
+  recommendedFor:
+    - "神卡能力学习"
+    - "进阶策略训练"
+    - "能力平衡测试"
+
+# 元数据
+metadata:
+  author: Test Development Team
+  created: "2024-01-20"
+  lastModified: "2024-01-20"
+  difficulty: advanced
+  estimatedDuration: 60s
+  relatedScenarios:
+    - demeter_basic_build
+    - minotaur_basic_push
+    - god_card_combinations
+  testPurpose: |
+    验证两种截然不同的神卡能力（建造增强 vs 移动增强）
+    在同一局游戏中的表现和平衡性，确保特殊能力的实现正确。
+  notes: |
+    这个场景重点测试：
+    1. Demeter双重建造能力的正确实现
+    2. Minotaur推动能力的正确实现
+    3. 两种能力在实际游戏中的策略价值
+    4. 特殊能力不会破坏游戏平衡

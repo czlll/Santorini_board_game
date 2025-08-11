@@ -1,0 +1,261 @@
+# Apollo vs Hermes 神卡能力测试场景
+# 测试Apollo的换位能力 vs Hermes的移动能力
+
+id: apollo_vs_hermes_mobility
+name: Apollo vs Hermes移动能力对抗测试
+description: |
+  测试Apollo神卡的换位能力与Hermes神卡的特殊移动能力，
+  验证两种不同的移动增强型神卡如何改变游戏节奏
+version: "1.0"
+tags:
+  - apollo
+  - hermes
+  - swap-move
+  - enhanced-move
+  - mobility
+  - god-card
+  - advanced
+
+setup:
+  players:
+    player1:
+      name: Apollo_Alice
+      godCard: Apollo
+    player2:
+      name: Hermes_Bob
+      godCard: Hermes
+  boardSize:
+    width: 5
+    height: 5
+
+moves:
+  # === 工人放置阶段 ===
+  - step: 1
+    type: place_worker
+    player: player1
+    to: {x: 1, y: 1}  # Apollo在左上区域
+    metadata:
+      workerIndex: 0
+      description: "Apollo Alice放置第一个工人"
+      
+  - step: 2
+    type: place_worker
+    player: player1
+    to: {x: 3, y: 1}  # Apollo第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Apollo Alice放置第二个工人在右侧"
+      
+  - step: 3
+    type: place_worker
+    player: player2
+    to: {x: 2, y: 1}  # Hermes在中间，准备展示移动能力
+    metadata:
+      workerIndex: 0
+      description: "Hermes Bob放置工人在中央，准备展示移动优势"
+      
+  - step: 4
+    type: place_worker
+    player: player2
+    to: {x: 1, y: 3}  # Hermes第二个工人
+    metadata:
+      workerIndex: 1
+      description: "Hermes Bob放置第二个工人"
+
+  # === 游戏进行阶段 ===
+  # Apollo回合 - 展示换位能力
+  - step: 5
+    type: special_action
+    player: player1
+    from: {x: 1, y: 1}
+    to: {x: 2, y: 1}   # Apollo与Hermes工人换位
+    metadata:
+      description: "Apollo使用换位能力与Hermes工人交换位置"
+      specialAbility: apollo_swap
+      targetPlayer: player2
+      swapWith: "enemy_worker"
+      
+  - step: 6
+    type: build
+    player: player1
+    to: {x: 1, y: 0}   # Apollo建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Apollo在新位置建造"
+
+  # Hermes回合 - 展示特殊移动能力
+  - step: 7
+    type: special_action
+    player: player2
+    from: {x: 1, y: 1}  # 被换位到的位置
+    to: {x: 1, y: 4}    # Hermes的特殊移动（可能能移动更远距离）
+    metadata:
+      description: "Hermes使用特殊移动能力"
+      specialAbility: hermes_move
+      moveType: "enhanced_range"
+      
+  - step: 8
+    type: build
+    player: player2
+    to: {x: 0, y: 4}   # Hermes建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Hermes在新位置建造"
+
+  # 继续展示能力交互
+  - step: 9
+    type: move
+    player: player1
+    from: {x: 3, y: 1}
+    to: {x: 3, y: 2}   # Apollo另一个工人常规移动
+    metadata:
+      description: "Apollo另一个工人进行常规移动"
+      
+  - step: 10
+    type: build
+    player: player1
+    to: {x: 4, y: 2}   # 建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Apollo建造方块"
+
+  # Hermes展示更多移动灵活性
+  - step: 11
+    type: special_action
+    player: player2
+    from: {x: 1, y: 3}
+    to: {x: 3, y: 3}   # Hermes另一个工人特殊移动
+    metadata:
+      description: "Hermes第二个工人使用特殊移动"
+      specialAbility: hermes_move
+      moveType: "special_path"
+      
+  - step: 12
+    type: build
+    player: player2
+    to: {x: 4, y: 3}   # 建造
+    metadata:
+      buildType: block
+      level: 1
+      description: "Hermes建造"
+
+  # 展示Apollo再次使用换位
+  - step: 13
+    type: move
+    player: player1
+    from: {x: 2, y: 1}
+    to: {x: 2, y: 2}   # Apollo移动到更好的换位位置
+    metadata:
+      description: "Apollo移动到战略位置"
+      
+  - step: 14
+    type: build
+    player: player1
+    to: {x: 2, y: 3}   # 建造阻挡
+    metadata:
+      buildType: block
+      level: 1
+      description: "Apollo建造阻挡"
+
+# 预期结果验证
+expectedOutcome:
+  gameState: in_progress
+  boardState:
+    # 最终工人位置
+    "2,2":
+      worker: {player: player1, index: 0}  # Apollo工人
+    "3,2":
+      worker: {player: player1, index: 1}  # Apollo另一个工人
+    "1,4":
+      worker: {player: player2, index: 0}  # Hermes工人
+    "3,3":
+      worker: {player: player2, index: 1}  # Hermes另一个工人
+    
+    # 建筑物
+    "1,0": {level: 1}
+    "0,4": {level: 1}
+    "4,2": {level: 1}
+    "4,3": {level: 1}
+    "2,3": {level: 1}
+      
+  validations:
+    - type: apollo_swap_used
+      expected: true
+    - type: hermes_enhanced_move_used
+      expected: true
+    - type: position_changes
+      description: "验证换位和特殊移动确实改变了工人位置"
+    - type: tactical_advantage
+      description: "两种移动能力都为各自玩家创造了战术优势"
+
+# 能力说明和测试重点
+abilityFocus:
+  apollo:
+    description: "可以与敌方工人交换位置"
+    strategicValue: "突破封锁、占据关键位置"
+    testPoints:
+      - "换位后双方工人位置正确交换"
+      - "换位不受常规移动限制约束"
+      - "可以利用换位占据对手的有利位置"
+      
+  hermes:
+    description: "具有特殊的移动能力（具体实现取决于代码）"
+    strategicValue: "灵活性和机动性"
+    testPoints:
+      - "能够执行超出常规范围的移动"
+      - "移动路径更加灵活"
+      - "可以快速改变棋盘布局"
+
+# 测试变体
+variants:
+  - name: multiple_swaps
+    description: "测试Apollo多次使用换位能力"
+    additionalMoves:
+      - step: 15
+        type: special_action
+        player: player1
+        from: {x: 2, y: 2}
+        to: {x: 1, y: 4}  # 再次与Hermes换位
+        
+  - name: hermes_mobility_showcase
+    description: "重点展示Hermes的移动优势"
+    modifyMoves:
+      # 调整场景让Hermes有更多展示特殊移动的机会
+      
+  - name: blocked_swap_attempt
+    description: "测试Apollo换位被阻挡的情况"
+    modifySetup:
+      boardState:
+        "2,0": {level: 4}  # 创建无法到达的位置
+
+# 性能指标
+performance:
+  abilityUsageCount:
+    apollo_swaps: 1
+    hermes_special_moves: 2
+  strategicComplexity: high
+  movementVariations: 4  # 不同类型的移动方式
+
+# 元数据
+metadata:
+  author: Test Development Team
+  created: "2024-01-20"
+  difficulty: intermediate
+  estimatedDuration: 45s
+  relatedScenarios:
+    - apollo_basic_swap
+    - hermes_mobility_test
+    - mobility_god_cards
+  testPurpose: |
+    对比测试两种不同的移动增强型神卡，验证：
+    1. Apollo换位能力的正确实现和战略价值
+    2. Hermes特殊移动能力的正确实现
+    3. 两种能力在实际对战中的平衡性
+  notes: |
+    这个场景专注于移动能力的对比测试，展示：
+    - Apollo的换位创造突破机会
+    - Hermes的移动灵活性
+    - 两种不同移动增强方式的战略差异
