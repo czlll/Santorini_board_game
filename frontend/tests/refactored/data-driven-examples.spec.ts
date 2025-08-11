@@ -14,7 +14,7 @@ test.describe('Data-Driven Test Examples - Multiple Formats', () => {
 
   test('Execute scenario from YAML file', async ({ page }) => {
     // 从YAML文件加载并执行场景
-    await engine.executeScenarioFromFile('demeter-double-build.yaml');
+    await engine.executeScenarioFromFile('apollo-vs-hermes.yaml');
     
     // 验证游戏状态
     const gameState = await engine.getCurrentGameState();

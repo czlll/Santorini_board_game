@@ -226,7 +226,7 @@ export class SantoriniTestEngine {
    */
   async getCurrentGameState(): Promise<any> {
     // 从UI中读取当前游戏状态
-    const gameStatus = await this.page.locator('.text-danger, .text-success').textContent();
+    const gameStatus = await this.page.locator('.text-danger, .text-success').allTextContents();
     return {
       status: gameStatus,
       boardState: this.currentBoardState
