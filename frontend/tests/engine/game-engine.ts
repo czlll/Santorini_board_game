@@ -514,10 +514,23 @@ export class SantoriniTestEngine {
     console.log(`验证Hermes特殊移动能力: 对比步骤 ${beforeStep} -> ${afterStep}`);
     
     const comparison = this.compareStates(beforeStep, afterStep);
+    
+    console.log('=== Hermes特殊移动验证详情 ===');
+    console.log('完整位置变化:', comparison.workerPositionChanges);
+    
     const player2Changes = comparison.workerPositionChanges.player2.moved;
     
+    console.log(`Player2 (Hermes) 移动的工人数: ${player2Changes.length}`);
     if (player2Changes.length === 0) {
-      console.log('Player2 (Hermes) 没有工人移动');
+      console.log('❌ Player2 (Hermes) 没有工人移动');
+      
+      // 调试：显示前后状态对比
+      const beforeState = this.getStateSnapshot(beforeStep);
+      const afterState = this.getStateSnapshot(afterStep);
+      console.log('调试信息:');
+      console.log(`步骤${beforeStep}时Hermes位置:`, beforeState?.gameState.workerPositions.player2);
+      console.log(`步骤${afterStep}时Hermes位置:`, afterState?.gameState.workerPositions.player2);
+      
       return false;
     }
     
@@ -525,10 +538,14 @@ export class SantoriniTestEngine {
     let enhancedMoveDetected = false;
     for (const move of player2Changes) {
       const distance = Math.abs(move.to[0] - move.from[0]) + Math.abs(move.to[1] - move.from[1]);
+      console.log(`检查Hermes移动: ${JSON.stringify(move.from)} -> ${JSON.stringify(move.to)}, 距离 ${distance} 格`);
+      
       if (distance > 1) {
         enhancedMoveDetected = true;
         console.log(`✅ 检测到Hermes特殊移动: 从 ${JSON.stringify(move.from)} 到 ${JSON.stringify(move.to)}, 距离 ${distance} 格`);
         break;
+      } else {
+        console.log(`普通移动: ${JSON.stringify(move.from)} -> ${JSON.stringify(move.to)}, 距离仅 ${distance} 格`);
       }
     }
     
@@ -537,6 +554,8 @@ export class SantoriniTestEngine {
       return true;
     } else {
       console.log('❌ 未检测到超出常规距离的移动');
+      console.log('诊断信息:');
+      console.log(`- Player2移动详情: ${JSON.stringify(player2Changes)}`);
       return false;
     }
   }
@@ -1108,13 +1127,16 @@ export class SantoriniTestEngine {
       const row = Math.floor(i / 5);
       const col = i % 5;
       
+      // 修正坐标系：确保与YAML格式一致 [x, y]
+      // positionToGridIndex使用 y*5+x，所以这里row是y，col是x
       if (buttonClasses?.includes('btn-danger')) {
-        positions.player1.push([row, col]);
+        positions.player1.push([col, row]); // [x, y] 格式
       } else if (buttonClasses?.includes('btn-success')) {
-        positions.player2.push([row, col]);
+        positions.player2.push([col, row]); // [x, y] 格式
       }
     }
     
+    console.log('读取到的工人位置 (x,y格式):', positions);
     return positions;
   }
 
