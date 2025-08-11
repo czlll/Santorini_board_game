@@ -1,0 +1,43 @@
+id: custom_artemis_test
+name: 自定义Artemis测试
+description: 测试Artemis双重移动能力的自定义场景
+setup:
+  players:
+    player1:
+      name: Artemis_Player
+      godCard: Artemis
+    player2:
+      name: Atlas_Player
+      godCard: Atlas
+  boardSize:
+    width: 5
+    height: 5
+moves:
+  - type: place_worker
+    player: player1
+    to:
+      x: 2
+      'y': 2
+    metadata:
+      workerIndex: 0
+  - type: place_worker
+    player: player1
+    to:
+      x: 0
+      'y': 0
+    metadata:
+      workerIndex: 1
+  - type: place_worker
+    player: player2
+    to:
+      x: 4
+      'y': 4
+    metadata:
+      workerIndex: 0
+  - type: place_worker
+    player: player2
+    to:
+      x: 1
+      'y': 4
+    metadata:
+      workerIndex: 1

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { SantoriniTestEngine } from '../engine/game-engine';
-import { PageObjectManager } from '../pages/game-pages';
-import { testScenarios, validateGameScenario } from '../data/game-notation';
+import { SantoriniTestEngine } from '../tests/engine/game-engine';
+import { PageObjectManager } from '../tests/pages/game-pages';
+import { testScenarios, validateGameScenario } from '../tests/data/game-notation';
 
 test.describe('Santorini Game Flow - Decoupled Tests', () => {
   let engine: SantoriniTestEngine;
